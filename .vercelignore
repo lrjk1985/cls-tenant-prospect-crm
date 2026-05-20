@@ -1,0 +1,4 @@
+.DS_Store
+.vercel-cli-home
+.vercel-cli-cache
+*.zip

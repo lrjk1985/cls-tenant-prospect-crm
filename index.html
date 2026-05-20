@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tenant Prospect CRM</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <section class="auth-screen" id="authScreen">
+      <form class="auth-card" id="authForm">
+        <p class="eyebrow">Secure access</p>
+        <h1>Tenant Prospect CRM</h1>
+        <p class="auth-copy">Sign in with your approved account. The first account created becomes the admin.</p>
+        <label>
+          <span>Email address</span>
+          <input id="authEmailInput" name="email" type="email" autocomplete="email" required />
+        </label>
+        <label>
+          <span>Password</span>
+          <input id="authPasswordInput" name="password" type="password" autocomplete="current-password" minlength="6" required />
+        </label>
+        <div class="auth-actions">
+          <button class="primary-button" id="loginButton" type="submit">Log In</button>
+          <button class="secondary-button" id="signupButton" type="button">Create Account</button>
+        </div>
+        <p class="saved-notice" id="authNotice" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <main class="app-shell hidden" id="appShell">
+      <section class="workspace" aria-label="Tenant prospect CRM">
+        <header class="topbar">
+          <div class="topbar-title">
+            <p class="eyebrow">Leasing pipeline</p>
+            <h1>Tenant Prospect CRM</h1>
+            <div class="tab-switcher" role="tablist" aria-label="CRM sections">
+              <button class="tab-button active" id="prospectsTabButton" type="button" role="tab" aria-selected="true" aria-controls="prospectsTabPanel">Prospects</button>
+              <button class="tab-button" id="unitsTabButton" type="button" role="tab" aria-selected="false" aria-controls="unitsTabPanel">Units</button>
+              <button class="tab-button" id="agentsTabButton" type="button" role="tab" aria-selected="false" aria-controls="agentsTabPanel">Agents</button>
+              <button class="tab-button hidden" id="adminTabButton" type="button" role="tab" aria-selected="false" aria-controls="adminTabPanel">Admin</button>
+            </div>
+            <div class="account-strip">
+              <span id="currentUserText"></span>
+              <button class="secondary-button compact-button" id="logoutButton" type="button">Log Out</button>
+            </div>
+          </div>
+          <div class="topbar-actions" id="prospectTopbarActions">
+            <button class="secondary-button" id="importCsvButton" type="button">Import CSV</button>
+            <input class="file-input" id="csvFileInput" type="file" accept=".csv,text/csv" />
+            <button class="secondary-button" id="exportCsvButton" type="button">Export CSV</button>
+            <button class="primary-button" id="newProspectButton" type="button">New Prospect</button>
+            <p class="topbar-notice" id="importNotice" aria-live="polite"></p>
+          </div>
+          <div class="topbar-actions hidden" id="unitTopbarActions">
+            <button class="secondary-button" id="importUnitsCsvButton" type="button">Import Unit CSV</button>
+            <input class="file-input" id="unitCsvFileInput" type="file" accept=".csv,text/csv" />
+            <button class="primary-button" id="newUnitButton" type="button">New Unit</button>
+            <p class="topbar-notice" id="unitImportNotice" aria-live="polite"></p>
+          </div>
+          <div class="topbar-actions hidden" id="agentTopbarActions">
+            <button class="secondary-button" id="importAgentsCsvButton" type="button">Import Agent CSV</button>
+            <input class="file-input" id="agentCsvFileInput" type="file" accept=".csv,text/csv" />
+            <button class="secondary-button" id="exportAgentsCsvButton" type="button">Export Agent CSV</button>
+            <button class="primary-button" id="newAgentButton" type="button">New Agent</button>
+            <p class="topbar-notice" id="agentImportNotice" aria-live="polite"></p>
+          </div>
+        </header>
+
+        <div class="layout tab-panel" id="prospectsTabPanel" role="tabpanel" aria-labelledby="prospectsTabButton">
+          <aside class="prospect-rail" aria-label="Prospect list">
+            <div class="search-row">
+              <label class="sr-only" for="searchInput">Search prospects</label>
+              <input id="searchInput" type="search" placeholder="Search all prospects" autocomplete="off" />
+              <div class="filter-grid" aria-label="Prospect filters">
+                <label>
+                  <span>Contacted on</span>
+                  <input id="contactDateInput" type="text" inputmode="numeric" maxlength="10" placeholder="DD-MM-YYYY" />
+                </label>
+                <label>
+                  <span>Year</span>
+                  <input id="contactYearInput" type="number" min="1900" max="2100" inputmode="numeric" placeholder="2026" />
+                </label>
+                <label>
+                  <span>Trade</span>
+                  <select id="tradeFilterInput">
+                    <option value="">All trades</option>
+                  </select>
+                </label>
+                <button class="secondary-button compact-button" id="clearFiltersButton" type="button">Clear</button>
+              </div>
+            </div>
+
+            <div class="stats-row" aria-label="Prospect totals">
+              <div>
+                <span id="prospectCount">0</span>
+                <small>Prospects</small>
+              </div>
+              <div>
+                <span id="interactionCount">0</span>
+                <small>Interactions</small>
+              </div>
+            </div>
+
+            <div class="prospect-list" id="prospectList" role="list"></div>
+          </aside>
+
+          <section class="detail-pane" aria-live="polite">
+            <div class="empty-state" id="emptyState">
+              <h2>Start with a prospect</h2>
+              <p>Add a tenant prospect, then log calls, viewings, follow-ups, and notes with automatic timestamps.</p>
+              <button class="primary-button" id="emptyNewButton" type="button">New Prospect</button>
+            </div>
+
+            <div class="detail-content hidden" id="detailContent">
+              <section class="editor-panel" aria-label="Prospect details">
+                <form id="prospectForm">
+                  <div class="form-heading">
+                    <div>
+                      <p class="eyebrow">Prospect details</p>
+                      <h2 id="formTitle">New prospect</h2>
+                    </div>
+                    <button class="danger-button" id="deleteProspectButton" type="button">Delete</button>
+                  </div>
+
+                  <div class="field-grid">
+                    <label>
+                      <span>Name <abbr class="required-marker" title="Required" aria-label="required">*</abbr></span>
+                      <input id="nameInput" name="name" type="text" autocomplete="name" required />
+                    </label>
+                    <label>
+                      <span>Business name</span>
+                      <input id="businessInput" name="business" type="text" autocomplete="organization" />
+                    </label>
+                    <label>
+                      <span>Contact number <abbr class="required-marker" title="Required" aria-label="required">*</abbr></span>
+                      <input id="phoneInput" name="phone" type="tel" autocomplete="tel" required />
+                    </label>
+                    <label>
+                      <span>Email address</span>
+                      <input id="emailInput" name="email" type="email" autocomplete="email" />
+                    </label>
+                    <label>
+                      <span>Telegram handle</span>
+                      <input id="telegramInput" name="telegram" type="text" placeholder="@username" autocomplete="off" />
+                    </label>
+                    <label>
+                      <span>Website</span>
+                      <input id="websiteInput" name="website" type="text" inputmode="url" autocomplete="url" placeholder="https://example.com" />
+                    </label>
+                    <label>
+                      <span>Social media</span>
+                      <input id="socialInput" name="social" type="text" placeholder="LinkedIn, Instagram, Facebook, etc." autocomplete="off" />
+                    </label>
+                    <label>
+                      <span>Building</span>
+                      <input id="buildingInput" name="building" type="text" autocomplete="off" />
+                    </label>
+                    <label>
+                      <span>Unit number</span>
+                      <input id="unitInput" name="unit" type="text" autocomplete="off" />
+                    </label>
+                    <label>
+                      <span>Agent</span>
+                      <input id="agentInput" name="agent" type="text" autocomplete="name" />
+                    </label>
+                    <label>
+                      <span>Agency</span>
+                      <input id="agencyInput" name="agency" type="text" autocomplete="organization" />
+                    </label>
+                    <label>
+                      <span>Status</span>
+                      <select id="statusInput" name="status">
+                        <option>New</option>
+                        <option>Contacted</option>
+                        <option>Arranging Viewing</option>
+                        <option>Viewed</option>
+                        <option>Negotiating</option>
+                        <option>Closed</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Trade <abbr class="required-marker" title="Required" aria-label="required">*</abbr></span>
+                      <input id="tradeInput" name="trade" type="text" placeholder="Cafe, salon, office, etc." autocomplete="off" required />
+                    </label>
+                  </div>
+
+                  <div class="form-actions">
+                    <p id="savedNotice" class="saved-notice" aria-live="polite"></p>
+                    <button class="primary-button" id="saveProspectButton" type="submit">Save Prospect</button>
+                  </div>
+                </form>
+              </section>
+
+              <section class="interaction-panel" aria-label="Interactions">
+                <div class="section-heading">
+                  <div>
+                    <p class="eyebrow">Timeline</p>
+                    <h2>Interactions</h2>
+                  </div>
+                </div>
+
+                <form class="interaction-form" id="interactionForm">
+                  <label>
+                    <span>Record interaction</span>
+                    <textarea id="interactionInput" rows="4" placeholder="Example: Called about Unit 3B. Interested in 1,200 sq ft and asked for rental terms."></textarea>
+                  </label>
+                  <label>
+                    <span>Attach file</span>
+                    <input id="interactionFileInput" type="file" />
+                  </label>
+                  <div class="form-actions">
+                    <p class="timestamp-hint" id="interactionNotice">Timestamp added automatically. Attachments up to 10 MB.</p>
+                    <button class="primary-button" type="submit">Add Interaction</button>
+                  </div>
+                </form>
+
+                <div class="timeline" id="timeline" role="list"></div>
+              </section>
+            </div>
+          </section>
+        </div>
+
+        <div class="layout tab-panel hidden" id="unitsTabPanel" role="tabpanel" aria-labelledby="unitsTabButton">
+          <aside class="prospect-rail" aria-label="Unit list">
+            <div class="search-row">
+              <label class="sr-only" for="unitSearchInput">Search units</label>
+              <input id="unitSearchInput" type="search" placeholder="Search units" autocomplete="off" />
+            </div>
+
+            <div class="stats-row" aria-label="Unit totals">
+              <div>
+                <span id="unitCount">0</span>
+                <small>Units</small>
+              </div>
+              <div>
+                <span id="unitDocumentCount">0</span>
+                <small>Files</small>
+              </div>
+            </div>
+
+            <div class="prospect-list" id="unitList" role="list"></div>
+          </aside>
+
+          <section class="detail-pane" aria-live="polite">
+            <div class="empty-state" id="unitEmptyState">
+              <h2>Start with a unit</h2>
+              <p>Add unit details, pricing, availability, and the key documents your leasing team needs.</p>
+              <button class="primary-button" id="emptyNewUnitButton" type="button">New Unit</button>
+            </div>
+
+            <div class="detail-content hidden" id="unitDetailContent">
+              <section class="editor-panel" aria-label="Unit details">
+                <form id="unitForm">
+                  <div class="form-heading">
+                    <div>
+                      <p class="eyebrow">Unit details</p>
+                      <h2 id="unitFormTitle">New unit</h2>
+                    </div>
+                    <button class="danger-button" id="deleteUnitButton" type="button">Delete</button>
+                  </div>
+
+                  <div class="field-grid">
+                    <label>
+                      <span>Unit number <abbr class="required-marker" title="Required" aria-label="required">*</abbr></span>
+                      <input id="unitNumberInput" name="number" type="text" autocomplete="off" required />
+                    </label>
+                    <label>
+                      <span>Price per square foot</span>
+                      <input id="unitPsfInput" name="pricePerSqft" type="number" min="0" step="0.01" inputmode="decimal" />
+                    </label>
+                    <label>
+                      <span>Last date of operation</span>
+                      <input id="unitLastOperationInput" name="lastOperationDate" type="text" inputmode="numeric" maxlength="10" pattern="\d{2}-\d{2}-\d{4}" placeholder="DD-MM-YYYY" />
+                    </label>
+                    <label>
+                      <span>Available date</span>
+                      <input id="unitAvailableInput" name="availableDate" type="text" inputmode="numeric" maxlength="10" pattern="\d{2}-\d{2}-\d{4}" placeholder="DD-MM-YYYY" />
+                    </label>
+                    <label>
+                      <span>Current price</span>
+                      <input id="unitCurrentPriceInput" name="currentPrice" type="number" min="0" step="0.01" inputmode="decimal" />
+                    </label>
+                    <label>
+                      <span>Market price</span>
+                      <input id="unitMarketPriceInput" name="marketPrice" type="number" min="0" step="0.01" inputmode="decimal" />
+                    </label>
+                  </div>
+
+                  <div class="form-actions">
+                    <p id="unitSavedNotice" class="saved-notice" aria-live="polite"></p>
+                    <button class="primary-button" id="saveUnitButton" type="submit">Save Unit</button>
+                  </div>
+                </form>
+              </section>
+
+              <section class="interaction-panel" aria-label="Unit documents">
+                <div class="section-heading">
+                  <div>
+                    <p class="eyebrow">Documents</p>
+                    <h2>Unit Files</h2>
+                  </div>
+                </div>
+
+                <form class="interaction-form" id="unitDocumentsForm">
+                  <label>
+                    <span>Unit floor plan PDF</span>
+                    <input id="unitFloorPlanInput" type="file" accept=".pdf,application/pdf" />
+                  </label>
+                  <label>
+                    <span>Unit M&amp;E PDF</span>
+                    <input id="unitMeInput" type="file" accept=".pdf,application/pdf" />
+                  </label>
+                  <label>
+                    <span>Unit photos</span>
+                    <input id="unitPhotosInput" type="file" accept="image/*" multiple />
+                  </label>
+                  <div class="form-actions">
+                    <p class="timestamp-hint" id="unitDocumentNotice">Documents are saved securely in Supabase Storage. Keep files under 10 MB each.</p>
+                    <button class="primary-button" type="submit">Save Files</button>
+                  </div>
+                </form>
+
+                <div class="document-list" id="unitDocumentList"></div>
+              </section>
+            </div>
+          </section>
+        </div>
+
+        <div class="layout tab-panel hidden" id="agentsTabPanel" role="tabpanel" aria-labelledby="agentsTabButton">
+          <aside class="prospect-rail" aria-label="Agent list">
+            <div class="search-row">
+              <label class="sr-only" for="agentSearchInput">Search agents</label>
+              <input id="agentSearchInput" type="search" placeholder="Search agents" autocomplete="off" />
+            </div>
+
+            <div class="stats-row" aria-label="Agent totals">
+              <div>
+                <span id="agentCount">0</span>
+                <small>Agents</small>
+              </div>
+            </div>
+
+            <div class="prospect-list" id="agentList" role="list"></div>
+          </aside>
+
+          <section class="detail-pane" aria-live="polite">
+            <div class="empty-state" id="agentEmptyState">
+              <h2>Start with an agent</h2>
+              <p>Add agent contact details, grade them, and keep a simple history of conversations.</p>
+              <button class="primary-button" id="emptyNewAgentButton" type="button">New Agent</button>
+            </div>
+
+            <div class="detail-content hidden" id="agentDetailContent">
+              <section class="editor-panel" aria-label="Agent details">
+                <form id="agentForm">
+                  <div class="form-heading">
+                    <div>
+                      <p class="eyebrow">Agent details</p>
+                      <h2 id="agentFormTitle">New agent</h2>
+                    </div>
+                    <button class="danger-button" id="deleteAgentButton" type="button">Delete</button>
+                  </div>
+
+                  <div class="field-grid">
+                    <label>
+                      <span>Agent name <abbr class="required-marker" title="Required" aria-label="required">*</abbr></span>
+                      <input id="agentNameInput" name="name" type="text" autocomplete="name" required />
+                    </label>
+                    <label>
+                      <span>Agency</span>
+                      <input id="agentAgencyInput" name="agency" type="text" autocomplete="organization" />
+                    </label>
+                    <label>
+                      <span>Contact number</span>
+                      <input id="agentPhoneInput" name="phone" type="tel" autocomplete="tel" />
+                    </label>
+                    <label>
+                      <span>Email address</span>
+                      <input id="agentEmailInput" name="email" type="email" autocomplete="email" />
+                    </label>
+                    <label>
+                      <span>Telegram handle</span>
+                      <input id="agentTelegramInput" name="telegram" type="text" placeholder="@username" autocomplete="off" />
+                    </label>
+                    <label>
+                      <span>Website</span>
+                      <input id="agentWebsiteInput" name="website" type="text" inputmode="url" autocomplete="url" placeholder="https://example.com" />
+                    </label>
+                    <label>
+                      <span>Social media</span>
+                      <input id="agentSocialInput" name="social" type="text" placeholder="LinkedIn, Instagram, Facebook, etc." autocomplete="off" />
+                    </label>
+                    <label>
+                      <span>Grade</span>
+                      <select id="agentGradeInput" name="grade">
+                        <option>A</option>
+                        <option>B</option>
+                        <option>C</option>
+                        <option>Watchlist</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div class="form-actions">
+                    <p id="agentSavedNotice" class="saved-notice" aria-live="polite"></p>
+                    <button class="primary-button" id="saveAgentButton" type="submit">Save Agent</button>
+                  </div>
+                </form>
+              </section>
+
+              <section class="interaction-panel" aria-label="Agent interactions">
+                <div class="section-heading">
+                  <div>
+                    <p class="eyebrow">Timeline</p>
+                    <h2>Agent Notes</h2>
+                  </div>
+                </div>
+
+                <form class="interaction-form" id="agentInteractionForm">
+                  <label>
+                    <span>Record agent interaction</span>
+                    <textarea id="agentInteractionInput" rows="4" placeholder="Example: Sent available units. Agent has strong F&B tenant contacts."></textarea>
+                  </label>
+                  <div class="form-actions">
+                    <p class="timestamp-hint" id="agentInteractionNotice">Timestamp added automatically.</p>
+                    <button class="primary-button" type="submit">Add Note</button>
+                  </div>
+                </form>
+
+                <div class="timeline" id="agentTimeline" role="list"></div>
+              </section>
+            </div>
+          </section>
+        </div>
+
+        <div class="admin-panel tab-panel hidden" id="adminTabPanel" role="tabpanel" aria-labelledby="adminTabButton">
+          <section class="editor-panel" aria-label="User management">
+            <form id="inviteUserForm">
+              <div class="form-heading">
+                <div>
+                  <p class="eyebrow">Admin</p>
+                  <h2>User Access</h2>
+                </div>
+              </div>
+
+              <div class="field-grid">
+                <label>
+                  <span>Email address <abbr class="required-marker" title="Required" aria-label="required">*</abbr></span>
+                  <input id="inviteEmailInput" name="email" type="email" autocomplete="email" required />
+                </label>
+                <label>
+                  <span>Name</span>
+                  <input id="inviteNameInput" name="fullName" type="text" autocomplete="name" />
+                </label>
+                <label>
+                  <span>Role</span>
+                  <select id="inviteRoleInput" name="role">
+                    <option value="member">Member</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="form-actions">
+                <p id="adminNotice" class="saved-notice" aria-live="polite"></p>
+                <button class="primary-button" type="submit">Invite User</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="interaction-panel" aria-label="Current users">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Team</p>
+                <h2>Approved Users</h2>
+              </div>
+            </div>
+            <div class="user-list" id="userList"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <template id="prospectItemTemplate">
+      <button class="prospect-item" type="button" role="listitem">
+        <span class="prospect-main">
+          <strong data-field="name"></strong>
+          <small data-field="business"></small>
+        </span>
+        <span class="prospect-meta">
+          <span data-field="status"></span>
+          <time data-field="lastContact"></time>
+        </span>
+      </button>
+    </template>
+
+    <template id="timelineItemTemplate">
+      <article class="timeline-item" role="listitem">
+        <div>
+          <time data-field="createdAt"></time>
+          <button class="link-button" data-action="delete-interaction" type="button">Delete</button>
+        </div>
+        <p data-field="note"></p>
+        <a class="attachment-link hidden" data-field="attachment" target="_blank" rel="noopener"></a>
+      </article>
+    </template>
+
+    <template id="unitItemTemplate">
+      <button class="prospect-item" type="button" role="listitem">
+        <span class="prospect-main">
+          <strong data-field="number"></strong>
+          <small data-field="availableDate"></small>
+        </span>
+        <span class="prospect-meta">
+          <span data-field="currentPrice"></span>
+          <time data-field="updatedAt"></time>
+        </span>
+      </button>
+    </template>
+
+    <template id="agentItemTemplate">
+      <button class="prospect-item" type="button" role="listitem">
+        <span class="prospect-main">
+          <strong data-field="name"></strong>
+          <small data-field="agency"></small>
+        </span>
+        <span class="prospect-meta">
+          <span data-field="grade"></span>
+          <time data-field="lastContact"></time>
+        </span>
+      </button>
+    </template>
+
+    <template id="agentTimelineItemTemplate">
+      <article class="timeline-item" role="listitem">
+        <div>
+          <time data-field="createdAt"></time>
+          <button class="link-button" data-action="delete-agent-interaction" type="button">Delete</button>
+        </div>
+        <p data-field="note"></p>
+      </article>
+    </template>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>
