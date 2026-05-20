@@ -8,7 +8,7 @@
   </head>
   <body>
     <section class="auth-screen" id="authScreen">
-      <form class="auth-card" id="authForm">
+      <form class="auth-card" id="authForm" method="post" onsubmit="return false">
         <p class="eyebrow">Secure access</p>
         <h1>Tenant Prospect CRM</h1>
         <p class="auth-copy">Sign in with your approved account. The first account created becomes the admin.</p>
@@ -543,6 +543,41 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+    <script>
+      (function () {
+        if ("DecompressionStream" in globalThis || !globalThis.TransformStream || !globalThis.pako) {
+          return;
+        }
+
+        globalThis.DecompressionStream = function (format) {
+          if (format !== "gzip") {
+            throw new TypeError("Only gzip decompression is supported.");
+          }
+
+          var chunks = [];
+          return new TransformStream({
+            transform: function (chunk) {
+              chunks.push(chunk);
+            },
+            flush: function (controller) {
+              var length = chunks.reduce(function (total, chunk) {
+                return total + chunk.length;
+              }, 0);
+              var input = new Uint8Array(length);
+              var offset = 0;
+
+              chunks.forEach(function (chunk) {
+                input.set(chunk, offset);
+                offset += chunk.length;
+              });
+
+              controller.enqueue(globalThis.pako.ungzip(input));
+            },
+          });
+        };
+      })();
+    </script>
     <script src="app.js" defer></script>
   </body>
 </html>
