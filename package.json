@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "esbuild": "^0.25.4"
+  },
+  "devDependencies": {}
+}
