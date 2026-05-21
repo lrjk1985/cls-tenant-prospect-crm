@@ -132,7 +132,11 @@ function unwrapAppSource(source) {
     return source;
   }
 
-  return gunzipSync(Buffer.from(encodedMatch[1], "base64")).toString("utf8");
+  try {
+    return gunzipSync(Buffer.from(encodedMatch[1], "base64")).toString("utf8");
+  } catch {
+    return source;
+  }
 }
 
 function addAccessPolishToApp(source) {
