@@ -31,7 +31,7 @@ const HTML_HELPERS_AFTER = `        <div class="auth-actions">
           <button class="secondary-button" id="signupButton" type="button">Create Account</button>
         </div>
         <div class="auth-helper-actions">
-          <button class="link-button auth-link-button" id="forgotPasswordButton" type="button">Forgot password?</button>
+          <button class="link-button auth-link-button" id="forgotPasswordButton" type="button">Send password reset email</button>
           <button class="link-button auth-link-button hidden" id="backToLoginButton" type="button">Back to log in</button>
         </div>
         <p class="saved-notice" id="authNotice" aria-live="polite"></p>`;
@@ -102,10 +102,14 @@ function addAccessPolishToHtml(source) {
   }
 
   let next = source;
+  next = next.replace(
+    '<form class="auth-card" id="authForm" method="post" onsubmit="return false">',
+    '<form class="auth-card" id="authForm" method="post">',
+  );
   next = next.replace('<form class="auth-card" id="authForm">', '<form class="auth-card" id="authForm" method="post">');
   next = next.replace(
     '<p class="auth-copy">Sign in with your approved account. The first account created becomes the admin.</p>',
-    '<p class="auth-copy" id="authCopy">Sign in with your approved account. The first account created becomes the admin.</p>',
+    '<p class="auth-copy" id="authCopy">Log in with your approved email and password. If you forget your password, enter your email and request a reset email.</p>',
   );
   next = replaceOnce(next, HTML_PASSWORD_FIELD_BEFORE, HTML_PASSWORD_FIELD_AFTER, "password reset HTML fields");
   next = replaceOnce(next, HTML_HELPERS_BEFORE, HTML_HELPERS_AFTER, "password reset HTML buttons");
