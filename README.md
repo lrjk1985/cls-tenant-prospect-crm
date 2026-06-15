@@ -30,6 +30,7 @@ Production backend pieces:
 
 - Supabase Auth email/password login.
 - Shared Supabase database tables for prospects, prospect interactions, units, unit files, agents, agent notes, and user profiles.
+- Shared Supabase trade categories for the prospect Trade dropdown, including active/inactive status.
 - Private Supabase Storage bucket `crm-files` with a 10 MB file limit.
 - Admin/member roles through the `profiles` table.
 - Admin-only Edge Function `manage-users` for inviting and approving users.
@@ -52,12 +53,13 @@ Backup note: Supabase database backups cover database records. Storage files are
 
 ## What It Does
 
-- Add tenant prospects with name, business name, agency, agent, building, unit number, trade, contact number, email, Telegram handle, website, social media, and status.
+- Add tenant prospects with name, business name, agency, agent, building, unit number, trade category, contact number, email, Telegram handle, website, social media, and status.
 - Record interaction notes with automatic date and time stamps.
 - Attach one file to an interaction. Attachments are saved in private Supabase Storage and should be 10 MB or smaller.
 - Search prospects by name, business, building, unit number, trade, phone, email, Telegram, website, social media, status, interaction note, contact date, or contact year.
-- Filter prospects by contacted date, year, or trade.
-- Show the 3 most recently active prospects by default, with the full list available through search or filters.
+- Filter prospects by contacted date, year, trade category, or status.
+- Use the Admin tab to add, deactivate, reactivate, or delete shared trade categories. Inactive categories are hidden from the Prospect Trade dropdown, while existing prospects keep their saved trade text.
+- Show the 3 most recently active prospects by default, with the full list available through search, filters, or Show All.
 - Import prospects from CSV.
 - Export prospects and interactions to CSV. Prospect exports include one row per interaction, plus interaction number, interaction total, and attachment file details when present.
 - Manage units in a separate Units tab with pricing, availability, floor plan PDFs, M&E PDFs, and photos.
@@ -72,7 +74,7 @@ The prospect import accepts a header row with these columns:
 Name,Business Name,Agency,Agent,Building,Unit Number,Trade,Contact Number,Email Address,Telegram Handle,Website,Social Media,Status,Interaction Timestamp,Interaction Note
 ```
 
-Name, trade, and contact number are required when saving prospects in the app and when importing CSV rows. If interaction timestamp and interaction note are included, the CRM imports those into the prospect timeline.
+Name and trade are required when saving prospects in the app and when importing CSV rows. Contact number is optional. If interaction timestamp and interaction note are included, the CRM imports those into the prospect timeline.
 
 Timestamps can use `DD-MM-YYYY HH:mm`, such as `28-04-2026 10:30`.
 

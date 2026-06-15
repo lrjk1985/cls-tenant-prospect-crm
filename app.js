@@ -1,10 +1,3904 @@
-const encodedApp = "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";
-(async () => {
-  if (!("DecompressionStream" in globalThis)) {
-    throw new Error("This browser cannot load the compressed CRM script. Please use a current browser.");
+const supabaseUrl = "https://dnmfqcjownhzngjdngdi.supabase.co";
+const supabasePublishableKey = "sb_publishable_hPwolXbHtAbRMoimb_PMuw_PSiYKZGC";
+const storageBucket = "crm-files";
+const maxAttachmentSize = 10 * 1024 * 1024;
+const defaultTradeCategories = ["F&B", "F&B Takeaway", "Retail", "Office"];
+const prospectStatusOptions = ["New", "Contacted", "Arranging Viewing", "Viewed", "Negotiating", "Closed"];
+const tradeCategoryStorageKey = "tenantProspectCrmTradeCategories";
+const defaultInteractionNotice = "Timestamp added automatically. Attachments up to 10 MB.";
+const defaultUnitDocumentNotice = "Documents are saved securely in Supabase Storage. Keep files under 10 MB each.";
+const defaultAgentInteractionNotice = "Timestamp added automatically.";
+const storageFullNotice =
+  "This is on screen, but the cloud database could not save it. Check your connection, then update again.";
+const cloudClient = globalThis.supabase?.createClient(supabaseUrl, supabasePublishableKey);
+
+const state = {
+  activeTab: "prospects",
+  prospects: [],
+  units: [],
+  agents: [],
+  users: [],
+  tradeCategories: readStoredTradeCategories(),
+  session: null,
+  currentUser: null,
+  currentProfile: null,
+  selectedId: null,
+  selectedUnitId: null,
+  selectedAgentId: null,
+  searchTerm: "",
+  unitSearchTerm: "",
+  agentSearchTerm: "",
+  contactDate: "",
+  contactYear: "",
+  tradeFilter: "",
+  statusFilter: "",
+  showAllProspects: false,
+  showAllAgents: false,
+  isLoadingProspects: false,
+  isLoadingUnits: false,
+  isLoadingAgents: false,
+  isLoadingTradeCategories: false,
+  isLoadingUsers: false,
+};
+
+const defaultProspectLimit = 3;
+const defaultAgentLimit = 3;
+const mobileProspectLayoutQuery = window.matchMedia("(max-width: 960px)");
+
+const elements = {
+  authScreen: document.querySelector("#authScreen"),
+  authForm: document.querySelector("#authForm"),
+  authEmailInput: document.querySelector("#authEmailInput"),
+  authPasswordInput: document.querySelector("#authPasswordInput"),
+  signupButton: document.querySelector("#signupButton"),
+  authNotice: document.querySelector("#authNotice"),
+  appShell: document.querySelector("#appShell"),
+  currentUserText: document.querySelector("#currentUserText"),
+  logoutButton: document.querySelector("#logoutButton"),
+  prospectsTabButton: document.querySelector("#prospectsTabButton"),
+  unitsTabButton: document.querySelector("#unitsTabButton"),
+  agentsTabButton: document.querySelector("#agentsTabButton"),
+  adminTabButton: document.querySelector("#adminTabButton"),
+  prospectsTabPanel: document.querySelector("#prospectsTabPanel"),
+  unitsTabPanel: document.querySelector("#unitsTabPanel"),
+  agentsTabPanel: document.querySelector("#agentsTabPanel"),
+  adminTabPanel: document.querySelector("#adminTabPanel"),
+  prospectTopbarActions: document.querySelector("#prospectTopbarActions"),
+  unitTopbarActions: document.querySelector("#unitTopbarActions"),
+  agentTopbarActions: document.querySelector("#agentTopbarActions"),
+  newProspectButton: document.querySelector("#newProspectButton"),
+  emptyNewButton: document.querySelector("#emptyNewButton"),
+  newUnitButton: document.querySelector("#newUnitButton"),
+  emptyNewUnitButton: document.querySelector("#emptyNewUnitButton"),
+  newAgentButton: document.querySelector("#newAgentButton"),
+  emptyNewAgentButton: document.querySelector("#emptyNewAgentButton"),
+  importAgentsCsvButton: document.querySelector("#importAgentsCsvButton"),
+  agentCsvFileInput: document.querySelector("#agentCsvFileInput"),
+  exportAgentsCsvButton: document.querySelector("#exportAgentsCsvButton"),
+  agentImportNotice: document.querySelector("#agentImportNotice"),
+  importUnitsCsvButton: document.querySelector("#importUnitsCsvButton"),
+  unitCsvFileInput: document.querySelector("#unitCsvFileInput"),
+  unitImportNotice: document.querySelector("#unitImportNotice"),
+  importCsvButton: document.querySelector("#importCsvButton"),
+  csvFileInput: document.querySelector("#csvFileInput"),
+  importNotice: document.querySelector("#importNotice"),
+  exportCsvButton: document.querySelector("#exportCsvButton"),
+  searchInput: document.querySelector("#searchInput"),
+  showAllProspectsButton: document.querySelector("#showAllProspectsButton"),
+  contactDateInput: document.querySelector("#contactDateInput"),
+  contactYearInput: document.querySelector("#contactYearInput"),
+  tradeFilterInput: document.querySelector("#tradeFilterInput"),
+  statusFilterInput: document.querySelector("#statusFilterInput"),
+  clearFiltersButton: document.querySelector("#clearFiltersButton"),
+  prospectCount: document.querySelector("#prospectCount"),
+  interactionCount: document.querySelector("#interactionCount"),
+  prospectRail: document.querySelector("#prospectRail"),
+  prospectList: document.querySelector("#prospectList"),
+  prospectDetailPane: document.querySelector("#prospectDetailPane"),
+  backToProspectListButton: document.querySelector("#backToProspectListButton"),
+  emptyState: document.querySelector("#emptyState"),
+  detailContent: document.querySelector("#detailContent"),
+  prospectForm: document.querySelector("#prospectForm"),
+  formTitle: document.querySelector("#formTitle"),
+  nameInput: document.querySelector("#nameInput"),
+  businessInput: document.querySelector("#businessInput"),
+  agencyInput: document.querySelector("#agencyInput"),
+  agentInput: document.querySelector("#agentInput"),
+  buildingInput: document.querySelector("#buildingInput"),
+  unitInput: document.querySelector("#unitInput"),
+  tradeInput: document.querySelector("#tradeInput"),
+  phoneInput: document.querySelector("#phoneInput"),
+  emailInput: document.querySelector("#emailInput"),
+  telegramInput: document.querySelector("#telegramInput"),
+  websiteInput: document.querySelector("#websiteInput"),
+  socialInput: document.querySelector("#socialInput"),
+  statusInput: document.querySelector("#statusInput"),
+  savedNotice: document.querySelector("#savedNotice"),
+  saveProspectButton: document.querySelector("#saveProspectButton"),
+  deleteProspectButton: document.querySelector("#deleteProspectButton"),
+  interactionForm: document.querySelector("#interactionForm"),
+  interactionInput: document.querySelector("#interactionInput"),
+  interactionFileInput: document.querySelector("#interactionFileInput"),
+  interactionNotice: document.querySelector("#interactionNotice"),
+  timeline: document.querySelector("#timeline"),
+  unitSearchInput: document.querySelector("#unitSearchInput"),
+  unitCount: document.querySelector("#unitCount"),
+  unitDocumentCount: document.querySelector("#unitDocumentCount"),
+  unitList: document.querySelector("#unitList"),
+  unitEmptyState: document.querySelector("#unitEmptyState"),
+  unitDetailContent: document.querySelector("#unitDetailContent"),
+  unitForm: document.querySelector("#unitForm"),
+  unitFormTitle: document.querySelector("#unitFormTitle"),
+  unitNumberInput: document.querySelector("#unitNumberInput"),
+  unitPsfInput: document.querySelector("#unitPsfInput"),
+  unitLastOperationInput: document.querySelector("#unitLastOperationInput"),
+  unitAvailableInput: document.querySelector("#unitAvailableInput"),
+  unitCurrentPriceInput: document.querySelector("#unitCurrentPriceInput"),
+  unitMarketPriceInput: document.querySelector("#unitMarketPriceInput"),
+  unitSavedNotice: document.querySelector("#unitSavedNotice"),
+  saveUnitButton: document.querySelector("#saveUnitButton"),
+  deleteUnitButton: document.querySelector("#deleteUnitButton"),
+  unitDocumentsForm: document.querySelector("#unitDocumentsForm"),
+  unitFloorPlanInput: document.querySelector("#unitFloorPlanInput"),
+  unitMeInput: document.querySelector("#unitMeInput"),
+  unitPhotosInput: document.querySelector("#unitPhotosInput"),
+  unitDocumentNotice: document.querySelector("#unitDocumentNotice"),
+  unitDocumentList: document.querySelector("#unitDocumentList"),
+  agentSearchInput: document.querySelector("#agentSearchInput"),
+  showAllAgentsButton: document.querySelector("#showAllAgentsButton"),
+  agentCount: document.querySelector("#agentCount"),
+  agentList: document.querySelector("#agentList"),
+  agentEmptyState: document.querySelector("#agentEmptyState"),
+  agentDetailContent: document.querySelector("#agentDetailContent"),
+  agentForm: document.querySelector("#agentForm"),
+  agentFormTitle: document.querySelector("#agentFormTitle"),
+  agentNameInput: document.querySelector("#agentNameInput"),
+  agentAgencyInput: document.querySelector("#agentAgencyInput"),
+  agentPhoneInput: document.querySelector("#agentPhoneInput"),
+  agentEmailInput: document.querySelector("#agentEmailInput"),
+  agentTelegramInput: document.querySelector("#agentTelegramInput"),
+  agentWebsiteInput: document.querySelector("#agentWebsiteInput"),
+  agentSocialInput: document.querySelector("#agentSocialInput"),
+  agentGradeInput: document.querySelector("#agentGradeInput"),
+  agentSavedNotice: document.querySelector("#agentSavedNotice"),
+  saveAgentButton: document.querySelector("#saveAgentButton"),
+  deleteAgentButton: document.querySelector("#deleteAgentButton"),
+  agentInteractionForm: document.querySelector("#agentInteractionForm"),
+  agentInteractionInput: document.querySelector("#agentInteractionInput"),
+  agentInteractionNotice: document.querySelector("#agentInteractionNotice"),
+  agentTimeline: document.querySelector("#agentTimeline"),
+  inviteUserForm: document.querySelector("#inviteUserForm"),
+  inviteEmailInput: document.querySelector("#inviteEmailInput"),
+  inviteNameInput: document.querySelector("#inviteNameInput"),
+  inviteRoleInput: document.querySelector("#inviteRoleInput"),
+  adminNotice: document.querySelector("#adminNotice"),
+  tradeCategoryForm: document.querySelector("#tradeCategoryForm"),
+  tradeCategoryInput: document.querySelector("#tradeCategoryInput"),
+  tradeCategoryNotice: document.querySelector("#tradeCategoryNotice"),
+  tradeCategoryList: document.querySelector("#tradeCategoryList"),
+  userList: document.querySelector("#userList"),
+  prospectItemTemplate: document.querySelector("#prospectItemTemplate"),
+  timelineItemTemplate: document.querySelector("#timelineItemTemplate"),
+  unitItemTemplate: document.querySelector("#unitItemTemplate"),
+  agentItemTemplate: document.querySelector("#agentItemTemplate"),
+  agentTimelineItemTemplate: document.querySelector("#agentTimelineItemTemplate"),
+};
+
+function cleanTradeCategory(value) {
+  return String(value || "").trim().replace(/\s+/g, " ");
+}
+
+function normalizeTradeCategoryValue(value) {
+  return cleanTradeCategory(value).toLowerCase();
+}
+
+function normalizeTradeCategoryRecord(category) {
+  const source = category && typeof category === "object" ? category : { name: category };
+  const name = cleanTradeCategory(source.name);
+
+  if (!name) {
+    return null;
   }
-  const bytes = Uint8Array.from(atob(encodedApp), (char) => char.charCodeAt(0));
-  const stream = new Response(bytes).body.pipeThrough(new DecompressionStream("gzip"));
-  const source = await new Response(stream).text();
-  (0, eval)(source);
-})();
+
+  return {
+    id: source.id || null,
+    name,
+    isActive: source.is_active ?? source.isActive ?? true,
+  };
+}
+
+function mergeTradeCategories(...categoryLists) {
+  const categoriesByValue = new Map();
+
+  categoryLists.flat().forEach((category) => {
+    const record = normalizeTradeCategoryRecord(category);
+
+    if (!record) {
+      return;
+    }
+
+    categoriesByValue.set(normalizeTradeCategoryValue(record.name), {
+      ...categoriesByValue.get(normalizeTradeCategoryValue(record.name)),
+      ...record,
+    });
+  });
+
+  return [...categoriesByValue.values()].sort((a, b) => {
+    if (a.isActive !== b.isActive) {
+      return a.isActive ? -1 : 1;
+    }
+
+    return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
+  });
+}
+
+function readStoredTradeCategories() {
+  try {
+    const storedCategories = JSON.parse(localStorage.getItem(tradeCategoryStorageKey) || "[]");
+    return mergeTradeCategories(defaultTradeCategories, Array.isArray(storedCategories) ? storedCategories : []);
+  } catch {
+    return mergeTradeCategories(defaultTradeCategories);
+  }
+}
+
+function saveStoredTradeCategories() {
+  try {
+    localStorage.setItem(tradeCategoryStorageKey, JSON.stringify(state.tradeCategories));
+  } catch {
+    // Browser storage can be unavailable in restricted modes; the in-memory list still works for the session.
+  }
+}
+
+async function loadProspects() {
+  const [prospectsResult, interactionsResult] = await Promise.all([
+    cloudClient.from("prospects").select("*").order("updated_at", { ascending: false }),
+    cloudClient.from("prospect_interactions").select("*").order("created_at", { ascending: false }),
+  ]);
+
+  if (prospectsResult.error) {
+    throw prospectsResult.error;
+  }
+
+  if (interactionsResult.error) {
+    throw interactionsResult.error;
+  }
+
+  const interactionsByProspect = new Map();
+
+  for (const interaction of interactionsResult.data || []) {
+    const mappedInteraction = await mapProspectInteractionFromDb(interaction);
+    const list = interactionsByProspect.get(interaction.prospect_id) || [];
+    list.push(mappedInteraction);
+    interactionsByProspect.set(interaction.prospect_id, list);
+  }
+
+  state.prospects = (prospectsResult.data || []).map((prospect) => mapProspectFromDb(
+    prospect,
+    interactionsByProspect.get(prospect.id) || [],
+  ));
+  state.selectedId = state.prospects.some((prospect) => prospect.id === state.selectedId)
+    ? state.selectedId
+    : sortProspects(state.prospects)[0]?.id || null;
+}
+
+async function loadUnits() {
+  const [unitsResult, documentsResult] = await Promise.all([
+    cloudClient.from("units").select("*").order("updated_at", { ascending: false }),
+    cloudClient.from("unit_documents").select("*").order("created_at", { ascending: false }),
+  ]);
+
+  if (unitsResult.error) {
+    throw unitsResult.error;
+  }
+
+  if (documentsResult.error) {
+    throw documentsResult.error;
+  }
+
+  const documentsByUnit = new Map();
+
+  for (const document of documentsResult.data || []) {
+    const attachment = await mapUnitDocumentFromDb(document);
+    const list = documentsByUnit.get(document.unit_id) || [];
+    list.push(attachment);
+    documentsByUnit.set(document.unit_id, list);
+  }
+
+  state.units = (unitsResult.data || []).map((unit) => mapUnitFromDb(
+    unit,
+    documentsByUnit.get(unit.id) || [],
+  ));
+  state.selectedUnitId = state.units.some((unit) => unit.id === state.selectedUnitId)
+    ? state.selectedUnitId
+    : sortUnits(state.units)[0]?.id || null;
+}
+
+async function loadAgents() {
+  const [agentsResult, interactionsResult] = await Promise.all([
+    cloudClient.from("agents").select("*").order("updated_at", { ascending: false }),
+    cloudClient.from("agent_interactions").select("*").order("created_at", { ascending: false }),
+  ]);
+
+  if (agentsResult.error) {
+    throw agentsResult.error;
+  }
+
+  if (interactionsResult.error) {
+    throw interactionsResult.error;
+  }
+
+  const interactionsByAgent = new Map();
+
+  for (const interaction of interactionsResult.data || []) {
+    const list = interactionsByAgent.get(interaction.agent_id) || [];
+    list.push(mapAgentInteractionFromDb(interaction));
+    interactionsByAgent.set(interaction.agent_id, list);
+  }
+
+  state.agents = (agentsResult.data || []).map((agent) => mapAgentFromDb(
+    agent,
+    interactionsByAgent.get(agent.id) || [],
+  ));
+  state.selectedAgentId = state.agents.some((agent) => agent.id === state.selectedAgentId)
+    ? state.selectedAgentId
+    : sortAgents(state.agents)[0]?.id || null;
+}
+
+async function loadTradeCategories() {
+  const { data, error } = await cloudClient
+    .from("trade_categories")
+    .select("id, name, is_active")
+    .order("is_active", { ascending: false })
+    .order("name", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  const cloudCategories = (data || []).map((category) => ({
+    id: category.id,
+    name: category.name,
+    isActive: category.is_active,
+  }));
+  state.tradeCategories = cloudCategories.length
+    ? mergeTradeCategories(cloudCategories)
+    : mergeTradeCategories(defaultTradeCategories);
+  saveStoredTradeCategories();
+}
+
+async function saveProspects() {
+  await syncProspectsToCloud();
+}
+
+async function saveUnits() {
+  await syncUnitsToCloud();
+}
+
+async function saveAgents() {
+  await syncAgentsToCloud();
+}
+
+function createId() {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (character) =>
+    (
+      Number(character) ^
+      (Math.random() * 16) >> (Number(character) / 4)
+    ).toString(16),
+  );
+}
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function requireCloudClient() {
+  if (!cloudClient) {
+    throw new Error("Supabase client is not available.");
+  }
+}
+
+function cleanNumberValue(value) {
+  if (value === "" || value === null || value === undefined) {
+    return null;
+  }
+
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function fileHref(attachment) {
+  return attachment?.url || attachment?.dataUrl || "";
+}
+
+function safeFileName(name) {
+  return String(name || "file")
+    .trim()
+    .replace(/[^a-z0-9._-]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    || "file";
+}
+
+async function createSignedUrl(path) {
+  if (!path) {
+    return "";
+  }
+
+  const { data, error } = await cloudClient.storage
+    .from(storageBucket)
+    .createSignedUrl(path, 60 * 60);
+
+  if (error) {
+    return "";
+  }
+
+  return data?.signedUrl || "";
+}
+
+async function uploadCloudFile(file, folder) {
+  if (!file) {
+    return null;
+  }
+
+  if (file.size > maxAttachmentSize) {
+    throw new Error("file-too-large");
+  }
+
+  const id = createId();
+  const path = `${folder}/${id}-${safeFileName(file.name)}`;
+  const { error } = await cloudClient.storage
+    .from(storageBucket)
+    .upload(path, file, {
+      contentType: file.type || "application/octet-stream",
+      upsert: false,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  return {
+    id,
+    path,
+    name: file.name,
+    type: file.type || "application/octet-stream",
+    size: file.size,
+    url: await createSignedUrl(path),
+  };
+}
+
+async function deleteCloudFile(path) {
+  if (!path) {
+    return;
+  }
+
+  await cloudClient.storage.from(storageBucket).remove([path]);
+}
+
+function prospectToDb(prospect) {
+  return {
+    id: prospect.id,
+    name: prospect.name || "Unnamed prospect",
+    business: prospect.business || "",
+    agency: prospect.agency || "",
+    agent: prospect.agent || "",
+    building: prospect.building || "",
+    unit: prospect.unit || "",
+    trade: prospect.trade || "",
+    phone: prospect.phone || "",
+    email: prospect.email || "",
+    telegram: prospect.telegram || "",
+    website: prospect.website || "",
+    social: prospect.social || "",
+    status: normalizeStatus(prospect.status),
+    created_by: prospect.createdBy || state.currentUser?.id || null,
+    updated_by: state.currentUser?.id || null,
+    created_at: prospect.createdAt || nowIso(),
+    updated_at: prospect.updatedAt || nowIso(),
+  };
+}
+
+function mapProspectFromDb(row, interactions = []) {
+  return {
+    id: row.id,
+    name: row.name || "",
+    business: row.business || "",
+    agency: row.agency || "",
+    agent: row.agent || "",
+    building: row.building || "",
+    unit: row.unit || "",
+    trade: row.trade || "",
+    phone: row.phone || "",
+    email: row.email || "",
+    telegram: row.telegram || "",
+    website: row.website || "",
+    social: row.social || "",
+    status: normalizeStatus(row.status),
+    isDraft: false,
+    createdBy: row.created_by || "",
+    updatedBy: row.updated_by || "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    interactions,
+  };
+}
+
+async function mapProspectInteractionFromDb(row) {
+  const attachment = row.attachment_path
+    ? {
+        id: row.id,
+        path: row.attachment_path,
+        name: row.attachment_name || "Attachment",
+        type: row.attachment_type || "application/octet-stream",
+        size: row.attachment_size || 0,
+        url: await createSignedUrl(row.attachment_path),
+      }
+    : null;
+
+  return {
+    id: row.id,
+    note: row.note || "",
+    createdAt: row.created_at,
+    attachment,
+  };
+}
+
+function unitToDb(unit) {
+  return {
+    id: unit.id,
+    number: unit.number || "Unnamed unit",
+    price_per_sqft: cleanNumberValue(unit.pricePerSqft),
+    last_operation_date: unit.lastOperationDate || null,
+    available_date: unit.availableDate || null,
+    current_price: cleanNumberValue(unit.currentPrice),
+    market_price: cleanNumberValue(unit.marketPrice),
+    created_by: unit.createdBy || state.currentUser?.id || null,
+    updated_by: state.currentUser?.id || null,
+    created_at: unit.createdAt || nowIso(),
+    updated_at: unit.updatedAt || nowIso(),
+  };
+}
+
+function mapUnitFromDb(row, documents = []) {
+  const groupedDocuments = createEmptyUnitDocuments();
+
+  documents.forEach((document) => {
+    if (document.documentType === "floorPlan") {
+      groupedDocuments.floorPlan = document;
+    } else if (document.documentType === "me") {
+      groupedDocuments.me = document;
+    } else if (document.documentType === "photo") {
+      groupedDocuments.photos.push(document);
+    }
+  });
+
+  return {
+    id: row.id,
+    number: row.number || "",
+    pricePerSqft: row.price_per_sqft ?? "",
+    lastOperationDate: row.last_operation_date || "",
+    availableDate: row.available_date || "",
+    currentPrice: row.current_price ?? "",
+    marketPrice: row.market_price ?? "",
+    isDraft: false,
+    createdBy: row.created_by || "",
+    updatedBy: row.updated_by || "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    documents: groupedDocuments,
+  };
+}
+
+async function mapUnitDocumentFromDb(row) {
+  return {
+    id: row.id,
+    documentType: row.document_type,
+    path: row.storage_path,
+    name: row.name || "File",
+    type: row.type || "application/octet-stream",
+    size: row.size || 0,
+    url: await createSignedUrl(row.storage_path),
+  };
+}
+
+function agentToDb(agent) {
+  return {
+    id: agent.id,
+    name: agent.name || "Unnamed agent",
+    agency: agent.agency || "",
+    phone: agent.phone || "",
+    email: agent.email || "",
+    telegram: agent.telegram || "",
+    website: agent.website || "",
+    social: agent.social || "",
+    grade: normalizeAgentGrade(agent.grade),
+    created_by: agent.createdBy || state.currentUser?.id || null,
+    updated_by: state.currentUser?.id || null,
+    created_at: agent.createdAt || nowIso(),
+    updated_at: agent.updatedAt || nowIso(),
+  };
+}
+
+function mapAgentFromDb(row, interactions = []) {
+  return {
+    id: row.id,
+    name: row.name || "",
+    agency: row.agency || "",
+    phone: row.phone || "",
+    email: row.email || "",
+    telegram: row.telegram || "",
+    website: row.website || "",
+    social: row.social || "",
+    grade: normalizeAgentGrade(row.grade),
+    isDraft: false,
+    createdBy: row.created_by || "",
+    updatedBy: row.updated_by || "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    interactions,
+  };
+}
+
+function mapAgentInteractionFromDb(row) {
+  return {
+    id: row.id,
+    note: row.note || "",
+    createdAt: row.created_at,
+  };
+}
+
+async function upsertProspectToCloud(prospect) {
+  const { data, error } = await cloudClient
+    .from("prospects")
+    .upsert(prospectToDb(prospect), { onConflict: "id" })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  Object.assign(prospect, mapProspectFromDb(data, prospect.interactions || []));
+  return prospect;
+}
+
+async function upsertUnitToCloud(unit) {
+  const { data, error } = await cloudClient
+    .from("units")
+    .upsert(unitToDb(unit), { onConflict: "id" })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  const documents = unit.documents || createEmptyUnitDocuments();
+  Object.assign(unit, mapUnitFromDb(data, [
+    documents.floorPlan,
+    documents.me,
+    ...(documents.photos || []),
+  ].filter(Boolean)));
+  return unit;
+}
+
+async function upsertAgentToCloud(agent) {
+  const { data, error } = await cloudClient
+    .from("agents")
+    .upsert(agentToDb(agent), { onConflict: "id" })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  Object.assign(agent, mapAgentFromDb(data, agent.interactions || []));
+  return agent;
+}
+
+async function syncProspectsToCloud() {
+  for (const prospect of state.prospects.filter((item) => !item.isDraft)) {
+    await upsertProspectToCloud(prospect);
+
+    for (const interaction of prospect.interactions || []) {
+      const { error } = await cloudClient.from("prospect_interactions").upsert({
+        id: interaction.id,
+        prospect_id: prospect.id,
+        note: interaction.note || "",
+        attachment_path: interaction.attachment?.path || null,
+        attachment_name: interaction.attachment?.name || null,
+        attachment_type: interaction.attachment?.type || null,
+        attachment_size: interaction.attachment?.size || null,
+        created_by: state.currentUser?.id || null,
+        created_at: interaction.createdAt || nowIso(),
+      }, { onConflict: "id" });
+
+      if (error) {
+        throw error;
+      }
+    }
+  }
+}
+
+async function syncUnitsToCloud() {
+  for (const unit of state.units.filter((item) => !item.isDraft)) {
+    await upsertUnitToCloud(unit);
+  }
+}
+
+async function syncAgentsToCloud() {
+  for (const agent of state.agents.filter((item) => !item.isDraft)) {
+    await upsertAgentToCloud(agent);
+
+    for (const interaction of agent.interactions || []) {
+      const { error } = await cloudClient.from("agent_interactions").upsert({
+        id: interaction.id,
+        agent_id: agent.id,
+        note: interaction.note || "",
+        created_by: state.currentUser?.id || null,
+        created_at: interaction.createdAt || nowIso(),
+      }, { onConflict: "id" });
+
+      if (error) {
+        throw error;
+      }
+    }
+  }
+}
+
+function formatDateTime(isoDate) {
+  if (!isoDate) {
+    return "No interactions yet";
+  }
+
+  const date = new Date(isoDate);
+
+  if (Number.isNaN(date.getTime())) {
+    return "No interactions yet";
+  }
+
+  const dateText = formatDateForDisplay(isoDate);
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${dateText}, ${hours}:${minutes}`;
+}
+
+function formatDateTimeForCsv(isoDate) {
+  return isoDate ? formatDateTime(isoDate) : "";
+}
+
+function formatDateForInput(isoDate) {
+  if (!isoDate) {
+    return "";
+  }
+
+  const date = new Date(isoDate);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateForDisplay(isoDate) {
+  if (!isoDate) {
+    return "";
+  }
+
+  const cleanDate = String(isoDate).trim();
+  const isoMatch = cleanDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (isoMatch) {
+    return `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}`;
+  }
+
+  const date = new Date(cleanDate);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${day}-${month}-${year}`;
+}
+
+function parseDisplayDate(value) {
+  const cleanValue = String(value || "").trim();
+
+  if (!cleanValue) {
+    return "";
+  }
+
+  const isoMatch = cleanValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (isoMatch) {
+    return cleanValue;
+  }
+
+  const displayMatch = cleanValue.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+
+  if (!displayMatch) {
+    return "";
+  }
+
+  const day = Number(displayMatch[1]);
+  const month = Number(displayMatch[2]);
+  const year = Number(displayMatch[3]);
+  const date = new Date(year, month - 1, day);
+
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return "";
+  }
+
+  return [
+    String(year).padStart(4, "0"),
+    String(month).padStart(2, "0"),
+    String(day).padStart(2, "0"),
+  ].join("-");
+}
+
+function formatYear(isoDate) {
+  if (!isoDate) {
+    return "";
+  }
+
+  const date = new Date(isoDate);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return String(date.getFullYear());
+}
+
+function normalizeStatus(status) {
+  const cleanStatus = String(status || "").trim();
+  const statusMap = {
+    "Viewing booked": "Arranging Viewing",
+    "Application received": "Negotiating",
+  };
+
+  return statusMap[cleanStatus] || cleanStatus || "New";
+}
+
+function latestInteractionDate(prospect) {
+  return prospect.interactions?.[0]?.createdAt || prospect.updatedAt || prospect.createdAt;
+}
+
+function latestAgentContactDate(agent) {
+  return agent.interactions?.[0]?.createdAt || agent.updatedAt || agent.createdAt;
+}
+
+function normalizeAgentGrade(grade) {
+  const cleanGrade = String(grade || "").trim();
+  const gradeMap = {
+    a: "A",
+    b: "B",
+    c: "C",
+    watchlist: "Watchlist",
+  };
+
+  return gradeMap[cleanGrade.toLowerCase()] || cleanGrade || "B";
+}
+
+function agentGradeRank(grade) {
+  const ranks = {
+    A: 0,
+    B: 1,
+    C: 2,
+    Watchlist: 3,
+  };
+
+  return ranks[normalizeAgentGrade(grade)] ?? 4;
+}
+
+function createEmptyUnitDocuments() {
+  return {
+    floorPlan: null,
+    me: null,
+    photos: [],
+  };
+}
+
+function getSelectedProspect() {
+  return state.prospects.find((prospect) => prospect.id === state.selectedId) || null;
+}
+
+function getSelectedUnit() {
+  return state.units.find((unit) => unit.id === state.selectedUnitId) || null;
+}
+
+function getSelectedAgent() {
+  return state.agents.find((agent) => agent.id === state.selectedAgentId) || null;
+}
+
+function prospectMergeKey(prospect) {
+  return [
+    prospect.name,
+    prospect.business,
+    prospect.agency,
+    prospect.agent,
+    prospect.building,
+    prospect.unit,
+    prospect.phone,
+    prospect.email,
+    prospect.telegram,
+  ]
+    .map((value) => String(value || "").toLowerCase())
+    .join("|");
+}
+
+function agentMergeKey(agent) {
+  return [
+    agent.name,
+    agent.agency,
+    agent.phone,
+    agent.email,
+    agent.telegram,
+  ]
+    .map((value) => String(value || "").toLowerCase())
+    .join("|");
+}
+
+function sortProspects(prospects) {
+  return [...prospects].sort((a, b) => {
+    const dateCompare = new Date(latestInteractionDate(b)) - new Date(latestInteractionDate(a));
+
+    if (dateCompare !== 0) {
+      return dateCompare;
+    }
+
+    return (a.name || "").localeCompare(b.name || "");
+  });
+}
+
+function sortUnits(units) {
+  return [...units].sort((a, b) =>
+    (a.number || "").localeCompare(b.number || "", undefined, { numeric: true, sensitivity: "base" }),
+  );
+}
+
+function sortAgents(agents) {
+  return [...agents].sort((a, b) => {
+    const dateCompare = new Date(latestAgentContactDate(b)) - new Date(latestAgentContactDate(a));
+
+    if (dateCompare !== 0) {
+      return dateCompare;
+    }
+
+    return (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" });
+  });
+}
+
+function formatMoney(value) {
+  if (value === undefined || value === null || value === "") {
+    return "No price entered";
+  }
+
+  const number = Number(value);
+
+  if (Number.isNaN(number)) {
+    return String(value);
+  }
+
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: "SGD",
+    maximumFractionDigits: number % 1 === 0 ? 0 : 2,
+  }).format(number);
+}
+
+function formatDateLabel(isoDate, emptyLabel = "No date entered") {
+  if (!isoDate) {
+    return emptyLabel;
+  }
+
+  return formatDateForDisplay(isoDate) || emptyLabel;
+}
+
+function interactionDateMatches(prospect, contactDate, contactYear) {
+  if (!contactDate && !contactYear) {
+    return true;
+  }
+
+  const interactions = prospect.interactions || [];
+
+  return interactions.some((interaction) => {
+    const interactionDate = formatDateForInput(interaction.createdAt);
+    const interactionYear = formatYear(interaction.createdAt);
+    const matchesDate = !contactDate || interactionDate === contactDate;
+    const matchesYear = !contactYear || interactionYear === contactYear;
+
+    return matchesDate && matchesYear;
+  });
+}
+
+function prospectSearchText(prospect) {
+  const interactionText = (prospect.interactions || [])
+    .flatMap((interaction) => [
+      interaction.note,
+      interaction.attachment?.name,
+      interaction.createdAt,
+      formatDateForInput(interaction.createdAt),
+      formatYear(interaction.createdAt),
+      formatDateTime(interaction.createdAt),
+    ])
+    .join(" ");
+
+  return [
+    prospect.name,
+    prospect.business,
+    prospect.agency,
+    prospect.agent,
+    prospect.building,
+    prospect.unit,
+    prospect.trade,
+    prospect.phone,
+    prospect.email,
+    prospect.telegram,
+    prospect.website,
+    prospect.social,
+    normalizeStatus(prospect.status),
+    interactionText,
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+function normalizeFilterValue(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function uniqueFilterOptions(field) {
+  const optionsByValue = new Map();
+
+  state.prospects.forEach((prospect) => {
+    const label = String(prospect[field] || "").trim();
+    const value = normalizeFilterValue(label);
+
+    if (label && !optionsByValue.has(value)) {
+      optionsByValue.set(value, label);
+    }
+  });
+
+  return [...optionsByValue.entries()]
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true, sensitivity: "base" }));
+}
+
+function tradeCategoryOptions({
+  normalizedValues = false,
+  includeInactive = false,
+  includeUsedProspectTrades = false,
+} = {}) {
+  const categories = state.tradeCategories
+    .filter((category) => includeInactive || category.isActive)
+    .map((category) => category.name);
+  const usedTrades = includeUsedProspectTrades ? state.prospects.map((prospect) => prospect.trade) : [];
+
+  return mergeTradeCategories(categories, usedTrades).map((category) => ({
+    value: normalizedValues ? normalizeFilterValue(category.name) : category.name,
+    label: category.name,
+  }));
+}
+
+function unitSearchText(unit) {
+  const documents = unit.documents || createEmptyUnitDocuments();
+  const documentText = [
+    documents.floorPlan?.name,
+    documents.me?.name,
+    ...(documents.photos || []).map((photo) => photo.name),
+  ].join(" ");
+
+  return [
+    unit.number,
+    unit.pricePerSqft,
+    unit.lastOperationDate,
+    unit.availableDate,
+    unit.currentPrice,
+    unit.marketPrice,
+    documentText,
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+function filteredUnits() {
+  const term = state.unitSearchTerm.trim().toLowerCase();
+
+  return sortUnits(
+    state.units.filter((unit) => !term || unitSearchText(unit).includes(term)),
+  );
+}
+
+function agentSearchText(agent) {
+  const interactionText = (agent.interactions || [])
+    .flatMap((interaction) => [
+      interaction.note,
+      interaction.createdAt,
+      formatDateTime(interaction.createdAt),
+    ])
+    .join(" ");
+
+  return [
+    agent.name,
+    agent.agency,
+    agent.phone,
+    agent.email,
+    agent.telegram,
+    agent.website,
+    agent.social,
+    normalizeAgentGrade(agent.grade),
+    interactionText,
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+function filteredAgents() {
+  const term = state.agentSearchTerm.trim().toLowerCase();
+
+  return sortAgents(
+    state.agents.filter((agent) => !term || agentSearchText(agent).includes(term)),
+  );
+}
+
+function visibleAgents() {
+  const agents = filteredAgents();
+
+  if (state.agentSearchTerm.trim() || state.showAllAgents) {
+    return agents;
+  }
+
+  return agents.slice(0, defaultAgentLimit);
+}
+
+function filteredProspects() {
+  const term = state.searchTerm.trim().toLowerCase();
+  const contactDate = state.contactDate;
+  const contactYear = state.contactYear.trim();
+  const tradeFilter = state.tradeFilter;
+  const statusFilter = state.statusFilter;
+
+  return sortProspects(
+    state.prospects.filter((prospect) => {
+      const matchesSearch = !term || prospectSearchText(prospect).includes(term);
+      const matchesContactDate = interactionDateMatches(prospect, contactDate, contactYear);
+      const matchesTrade = !tradeFilter || normalizeFilterValue(prospect.trade) === tradeFilter;
+      const matchesStatus = !statusFilter || normalizeStatus(prospect.status) === statusFilter;
+
+      return matchesSearch && matchesContactDate && matchesTrade && matchesStatus;
+    }),
+  );
+}
+
+function hasActiveSearchTerm() {
+  return Boolean(state.searchTerm.trim());
+}
+
+function hasActiveDateFilter() {
+  return Boolean(state.contactDate || state.contactYear.trim());
+}
+
+function hasActiveDetailFilter() {
+  return Boolean(state.tradeFilter || state.statusFilter);
+}
+
+function shouldShowAllProspectMatches() {
+  return hasActiveSearchTerm() || hasActiveDateFilter() || hasActiveDetailFilter();
+}
+
+function visibleProspects() {
+  const prospects = filteredProspects();
+
+  if (shouldShowAllProspectMatches() || state.showAllProspects) {
+    return prospects;
+  }
+
+  return prospects.slice(0, defaultProspectLimit);
+}
+
+function setNotice(message) {
+  elements.savedNotice.textContent = message;
+
+  if (!message) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (elements.savedNotice.textContent === message) {
+      elements.savedNotice.textContent = "";
+    }
+  }, 2200);
+}
+
+function setImportNotice(message) {
+  elements.importNotice.textContent = message;
+
+  if (!message) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (elements.importNotice.textContent === message) {
+      elements.importNotice.textContent = "";
+    }
+  }, 4200);
+}
+
+function setUnitImportNotice(message) {
+  elements.unitImportNotice.textContent = message;
+
+  if (!message) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (elements.unitImportNotice.textContent === message) {
+      elements.unitImportNotice.textContent = "";
+    }
+  }, 4200);
+}
+
+function setAgentImportNotice(message) {
+  elements.agentImportNotice.textContent = message;
+
+  if (!message) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (elements.agentImportNotice.textContent === message) {
+      elements.agentImportNotice.textContent = "";
+    }
+  }, 4200);
+}
+
+function setInteractionNotice(message) {
+  elements.interactionNotice.textContent = message || defaultInteractionNotice;
+
+  if (!message) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (elements.interactionNotice.textContent === message) {
+      elements.interactionNotice.textContent = defaultInteractionNotice;
+    }
+  }, 3600);
+}
+
+function setUnitNotice(message) {
+  elements.unitSavedNotice.textContent = message;
+
+  if (!message) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (elements.unitSavedNotice.textContent === message) {
+      elements.unitSavedNotice.textContent = "";
+    }
+  }, 2200);
+}
+
+function setAgentNotice(message) {
+  elements.agentSavedNotice.textContent = message;
+
+  if (!message) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (elements.agentSavedNotice.textContent === message) {
+      elements.agentSavedNotice.textContent = "";
+    }
+  }, 2200);
+}
+
+function setTradeCategoryNotice(message) {
+  elements.tradeCategoryNotice.textContent = message;
+
+  if (!message) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (elements.tradeCategoryNotice.textContent === message) {
+      elements.tradeCategoryNotice.textContent = "";
+    }
+  }, 2600);
+}
+
+function setUnitDocumentNotice(message) {
+  elements.unitDocumentNotice.textContent = message || defaultUnitDocumentNotice;
+
+  if (!message) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (elements.unitDocumentNotice.textContent === message) {
+      elements.unitDocumentNotice.textContent = defaultUnitDocumentNotice;
+    }
+  }, 3600);
+}
+
+function setAgentInteractionNotice(message) {
+  elements.agentInteractionNotice.textContent = message || defaultAgentInteractionNotice;
+
+  if (!message) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (elements.agentInteractionNotice.textContent === message) {
+      elements.agentInteractionNotice.textContent = defaultAgentInteractionNotice;
+    }
+  }, 3600);
+}
+
+function formatFileSize(bytes) {
+  if (!bytes) {
+    return "0 KB";
+  }
+
+  if (bytes < 1024 * 1024) {
+    return `${Math.ceil(bytes / 1024)} KB`;
+  }
+
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function readAttachment(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) {
+      resolve(null);
+      return;
+    }
+
+    if (file.size > maxAttachmentSize) {
+      reject(new Error("file-too-large"));
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.addEventListener("load", () => {
+      resolve({
+        id: createId(),
+        name: file.name,
+        type: file.type || "application/octet-stream",
+        size: file.size,
+        dataUrl: String(reader.result || ""),
+      });
+    });
+
+    reader.addEventListener("error", () => reject(new Error("file-read-failed")));
+    reader.readAsDataURL(file);
+  });
+}
+
+function createProspect() {
+  const prospect = {
+    id: createId(),
+    name: "New prospect",
+    business: "",
+    agency: "",
+    agent: "",
+    building: "",
+    unit: "",
+    trade: "",
+    phone: "",
+    email: "",
+    telegram: "",
+    website: "",
+    social: "",
+    status: "New",
+    isDraft: true,
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+    interactions: [],
+  };
+
+  state.prospects.unshift(prospect);
+  state.selectedId = prospect.id;
+  render();
+  scrollProspectDetailsIntoView();
+  elements.nameInput.focus();
+  elements.nameInput.select();
+}
+
+function createUnit() {
+  const unit = {
+    id: createId(),
+    number: "New unit",
+    pricePerSqft: "",
+    lastOperationDate: "",
+    availableDate: "",
+    currentPrice: "",
+    marketPrice: "",
+    isDraft: true,
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+    documents: createEmptyUnitDocuments(),
+  };
+
+  state.units.unshift(unit);
+  state.selectedUnitId = unit.id;
+  state.activeTab = "units";
+  render();
+  elements.unitNumberInput.focus();
+  elements.unitNumberInput.select();
+}
+
+function createAgent() {
+  const agent = {
+    id: createId(),
+    name: "New agent",
+    agency: "",
+    phone: "",
+    email: "",
+    telegram: "",
+    website: "",
+    social: "",
+    grade: "B",
+    isDraft: true,
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+    interactions: [],
+  };
+
+  state.agents.unshift(agent);
+  state.selectedAgentId = agent.id;
+  state.activeTab = "agents";
+  render();
+  elements.agentNameInput.focus();
+  elements.agentNameInput.select();
+}
+
+async function deleteSelectedProspect() {
+  const prospect = getSelectedProspect();
+
+  if (!prospect) {
+    return;
+  }
+
+  const confirmed = window.confirm(`Delete ${prospect.name || "this prospect"} and all interactions?`);
+
+  if (!confirmed) {
+    return;
+  }
+
+  if (!prospect.isDraft) {
+    for (const interaction of prospect.interactions || []) {
+      await deleteCloudFile(interaction.attachment?.path);
+    }
+
+    const { error } = await cloudClient.from("prospects").delete().eq("id", prospect.id);
+
+    if (error) {
+      setNotice(error.message);
+      return;
+    }
+  }
+
+  state.prospects = state.prospects.filter((item) => item.id !== prospect.id);
+  state.selectedId = sortProspects(state.prospects)[0]?.id || null;
+  render();
+}
+
+async function deleteSelectedUnit() {
+  const unit = getSelectedUnit();
+
+  if (!unit) {
+    return;
+  }
+
+  const confirmed = window.confirm(`Delete Unit ${unit.number || "this unit"} and its files?`);
+
+  if (!confirmed) {
+    return;
+  }
+
+  if (!unit.isDraft) {
+    const documents = unit.documents || createEmptyUnitDocuments();
+    const attachments = [documents.floorPlan, documents.me, ...(documents.photos || [])].filter(Boolean);
+
+    for (const attachment of attachments) {
+      await deleteCloudFile(attachment.path);
+    }
+
+    const { error } = await cloudClient.from("units").delete().eq("id", unit.id);
+
+    if (error) {
+      setUnitNotice(error.message);
+      return;
+    }
+  }
+
+  state.units = state.units.filter((item) => item.id !== unit.id);
+  state.selectedUnitId = sortUnits(state.units)[0]?.id || null;
+  render();
+}
+
+async function deleteSelectedAgent() {
+  const agent = getSelectedAgent();
+
+  if (!agent) {
+    return;
+  }
+
+  const confirmed = window.confirm(`Delete ${agent.name || "this agent"} and all notes?`);
+
+  if (!confirmed) {
+    return;
+  }
+
+  if (!agent.isDraft) {
+    const { error } = await cloudClient.from("agents").delete().eq("id", agent.id);
+
+    if (error) {
+      setAgentNotice(error.message);
+      return;
+    }
+  }
+
+  state.agents = state.agents.filter((item) => item.id !== agent.id);
+  state.selectedAgentId = sortAgents(state.agents)[0]?.id || null;
+  render();
+}
+
+async function updateSelectedProspect(formData) {
+  const prospect = getSelectedProspect();
+
+  if (!prospect) {
+    return;
+  }
+
+  prospect.name = formData.get("name").toString().trim() || "Unnamed prospect";
+  prospect.business = formData.get("business").toString().trim();
+  prospect.agency = formData.get("agency").toString().trim();
+  prospect.agent = formData.get("agent").toString().trim();
+  prospect.building = formData.get("building").toString().trim();
+  prospect.unit = formData.get("unit").toString().trim();
+  prospect.trade = formData.get("trade").toString().trim();
+  prospect.phone = formData.get("phone").toString().trim();
+  prospect.email = formData.get("email").toString().trim();
+  prospect.telegram = formData.get("telegram").toString().trim();
+  prospect.website = formData.get("website").toString().trim();
+  prospect.social = formData.get("social").toString().trim();
+  prospect.status = normalizeStatus(formData.get("status"));
+  prospect.isDraft = false;
+  prospect.updatedAt = nowIso();
+  try {
+    await upsertProspectToCloud(prospect);
+  } catch (error) {
+    render();
+    setNotice(error.message || storageFullNotice);
+    return;
+  }
+
+  render();
+  setNotice("Prospect saved.");
+}
+
+async function updateSelectedUnit(formData) {
+  const unit = getSelectedUnit();
+
+  if (!unit) {
+    return;
+  }
+
+  unit.number = formData.get("number").toString().trim() || "Unnamed unit";
+  unit.pricePerSqft = formData.get("pricePerSqft").toString().trim();
+  unit.lastOperationDate = parseDisplayDate(formData.get("lastOperationDate")) || "";
+  unit.availableDate = parseDisplayDate(formData.get("availableDate")) || "";
+  unit.currentPrice = formData.get("currentPrice").toString().trim();
+  unit.marketPrice = formData.get("marketPrice").toString().trim();
+  unit.isDraft = false;
+  unit.updatedAt = nowIso();
+  unit.documents = unit.documents || createEmptyUnitDocuments();
+  try {
+    await upsertUnitToCloud(unit);
+  } catch (error) {
+    render();
+    setUnitNotice(error.message || storageFullNotice);
+    return;
+  }
+
+  render();
+  setUnitNotice("Unit saved.");
+}
+
+async function updateSelectedAgent(formData) {
+  const agent = getSelectedAgent();
+
+  if (!agent) {
+    return;
+  }
+
+  agent.name = formData.get("name").toString().trim() || "Unnamed agent";
+  agent.agency = formData.get("agency").toString().trim();
+  agent.phone = formData.get("phone").toString().trim();
+  agent.email = formData.get("email").toString().trim();
+  agent.telegram = formData.get("telegram").toString().trim();
+  agent.website = formData.get("website").toString().trim();
+  agent.social = formData.get("social").toString().trim();
+  agent.grade = normalizeAgentGrade(formData.get("grade"));
+  agent.isDraft = false;
+  agent.updatedAt = nowIso();
+  agent.interactions = agent.interactions || [];
+  try {
+    await upsertAgentToCloud(agent);
+  } catch (error) {
+    render();
+    setAgentNotice(error.message || storageFullNotice);
+    return;
+  }
+
+  render();
+  setAgentNotice("Agent saved.");
+}
+
+async function addInteraction(note, file) {
+  const prospect = getSelectedProspect();
+  const cleanNote = note.trim();
+
+  if (!prospect) {
+    return;
+  }
+
+  if (!cleanNote && !file) {
+    setInteractionNotice("Add a note or attach a file first.");
+    return;
+  }
+
+  if (prospect.isDraft) {
+    setInteractionNotice("Save the prospect before adding interactions.");
+    return;
+  }
+
+  let attachment = null;
+
+  try {
+    attachment = await uploadCloudFile(file, `prospects/${prospect.id}/interactions`);
+  } catch (error) {
+    const message =
+      error.message === "file-too-large"
+        ? `Attachment is too large. Please choose a file under ${formatFileSize(maxAttachmentSize)}.`
+        : "Attachment could not be read.";
+    setInteractionNotice(message);
+    return;
+  }
+
+  try {
+    const { data, error } = await cloudClient.from("prospect_interactions").insert({
+      prospect_id: prospect.id,
+      note: cleanNote || "Attached file.",
+      attachment_path: attachment?.path || null,
+      attachment_name: attachment?.name || null,
+      attachment_type: attachment?.type || null,
+      attachment_size: attachment?.size || null,
+      created_by: state.currentUser?.id || null,
+      created_at: nowIso(),
+    }).select().single();
+
+    if (error) {
+      throw error;
+    }
+
+    prospect.interactions = prospect.interactions || [];
+    prospect.interactions.unshift(await mapProspectInteractionFromDb(data));
+    prospect.updatedAt = nowIso();
+    await upsertProspectToCloud(prospect);
+  } catch (error) {
+    await deleteCloudFile(attachment?.path);
+    setInteractionNotice(error.message || "Attachment could not be saved.");
+    return;
+  }
+
+  elements.interactionInput.value = "";
+  elements.interactionFileInput.value = "";
+  setInteractionNotice("Interaction added.");
+  render();
+}
+
+async function saveUnitDocuments() {
+  const unit = getSelectedUnit();
+  const floorPlanFile = elements.unitFloorPlanInput.files[0] || null;
+  const meFile = elements.unitMeInput.files[0] || null;
+  const photoFiles = Array.from(elements.unitPhotosInput.files || []);
+
+  if (!unit) {
+    return;
+  }
+
+  if (!floorPlanFile && !meFile && photoFiles.length === 0) {
+    setUnitDocumentNotice("Choose a PDF or photo first.");
+    return;
+  }
+
+  if (unit.isDraft) {
+    setUnitDocumentNotice("Save the unit before adding files.");
+    return;
+  }
+
+  const previousDocuments = JSON.parse(JSON.stringify(unit.documents || createEmptyUnitDocuments()));
+  const documents = unit.documents || createEmptyUnitDocuments();
+  documents.photos = documents.photos || [];
+  const uploadedAttachments = [];
+
+  try {
+    const floorPlan = await uploadCloudFile(floorPlanFile, `units/${unit.id}/floor-plan`);
+    const me = await uploadCloudFile(meFile, `units/${unit.id}/me`);
+    const photos = await Promise.all(photoFiles.map((file) => uploadCloudFile(file, `units/${unit.id}/photos`)));
+    uploadedAttachments.push(...[floorPlan, me, ...photos].filter(Boolean));
+
+    if (floorPlan) {
+      if (documents.floorPlan?.path) {
+        await cloudClient.from("unit_documents").delete().eq("id", documents.floorPlan.id);
+        await deleteCloudFile(documents.floorPlan.path);
+      }
+      documents.floorPlan = await insertUnitDocument(unit.id, "floorPlan", floorPlan);
+    }
+
+    if (me) {
+      if (documents.me?.path) {
+        await cloudClient.from("unit_documents").delete().eq("id", documents.me.id);
+        await deleteCloudFile(documents.me.path);
+      }
+      documents.me = await insertUnitDocument(unit.id, "me", me);
+    }
+
+    for (const photo of photos.filter(Boolean)) {
+      documents.photos.push(await insertUnitDocument(unit.id, "photo", photo));
+    }
+
+    unit.documents = documents;
+    unit.updatedAt = nowIso();
+    await upsertUnitToCloud(unit);
+  } catch (error) {
+    for (const attachment of uploadedAttachments) {
+      await deleteCloudFile(attachment.path);
+    }
+    unit.documents = previousDocuments;
+    const message =
+      error.message === "file-too-large"
+        ? `One file is too large. Please choose files under ${formatFileSize(maxAttachmentSize)} each.`
+        : "Those files could not be saved.";
+    setUnitDocumentNotice(message);
+    return;
+  }
+
+  elements.unitFloorPlanInput.value = "";
+  elements.unitMeInput.value = "";
+  elements.unitPhotosInput.value = "";
+  setUnitDocumentNotice("Files saved.");
+  render();
+}
+
+async function addAgentInteraction(note) {
+  const agent = getSelectedAgent();
+  const cleanNote = note.trim();
+
+  if (!agent) {
+    return;
+  }
+
+  if (!cleanNote) {
+    setAgentInteractionNotice("Add a note first.");
+    return;
+  }
+
+  if (agent.isDraft) {
+    setAgentInteractionNotice("Save the agent before adding notes.");
+    return;
+  }
+
+  const { data, error } = await cloudClient.from("agent_interactions").insert({
+    agent_id: agent.id,
+    note: cleanNote,
+    created_by: state.currentUser?.id || null,
+    created_at: nowIso(),
+  }).select().single();
+
+  if (error) {
+    setAgentInteractionNotice(error.message);
+    return;
+  }
+
+  agent.interactions = agent.interactions || [];
+  agent.interactions.unshift(mapAgentInteractionFromDb(data));
+  agent.updatedAt = nowIso();
+  await upsertAgentToCloud(agent);
+  elements.agentInteractionInput.value = "";
+  setAgentInteractionNotice("Note added.");
+  render();
+}
+
+async function deleteAgentInteraction(interactionId) {
+  const agent = getSelectedAgent();
+
+  if (!agent) {
+    return;
+  }
+
+  const confirmed = window.confirm("Delete this agent note?");
+
+  if (!confirmed) {
+    return;
+  }
+
+  const { error } = await cloudClient.from("agent_interactions").delete().eq("id", interactionId);
+
+  if (error) {
+    setAgentInteractionNotice(error.message);
+    return;
+  }
+
+  agent.interactions = (agent.interactions || []).filter((interaction) => interaction.id !== interactionId);
+  agent.updatedAt = nowIso();
+  await upsertAgentToCloud(agent);
+  render();
+}
+
+async function insertUnitDocument(unitId, documentType, attachment) {
+  const { data, error } = await cloudClient.from("unit_documents").insert({
+    unit_id: unitId,
+    document_type: documentType,
+    storage_path: attachment.path,
+    name: attachment.name,
+    type: attachment.type,
+    size: attachment.size,
+    created_by: state.currentUser?.id || null,
+  }).select().single();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapUnitDocumentFromDb(data);
+}
+
+async function deleteUnitDocument(type, documentId) {
+  const unit = getSelectedUnit();
+
+  if (!unit) {
+    return;
+  }
+
+  unit.documents = unit.documents || createEmptyUnitDocuments();
+  let removedAttachment = null;
+
+  if (type === "floorPlan") {
+    removedAttachment = unit.documents.floorPlan;
+    unit.documents.floorPlan = null;
+  } else if (type === "me") {
+    removedAttachment = unit.documents.me;
+    unit.documents.me = null;
+  } else if (type === "photo") {
+    removedAttachment = (unit.documents.photos || []).find((photo) => photo.id === documentId);
+    unit.documents.photos = (unit.documents.photos || []).filter((photo) => photo.id !== documentId);
+  }
+
+  if (removedAttachment?.id) {
+    const { error } = await cloudClient.from("unit_documents").delete().eq("id", removedAttachment.id);
+
+    if (error) {
+      setUnitDocumentNotice(error.message);
+      return;
+    }
+
+    await deleteCloudFile(removedAttachment.path);
+  }
+
+  unit.updatedAt = nowIso();
+  await upsertUnitToCloud(unit);
+  render();
+}
+
+async function deleteInteraction(interactionId) {
+  const prospect = getSelectedProspect();
+
+  if (!prospect) {
+    return;
+  }
+
+  const interaction = prospect.interactions.find((item) => item.id === interactionId);
+  const confirmationMessage = interaction?.attachment
+    ? "Delete this interaction and its attachment?"
+    : "Delete this interaction?";
+  const confirmed = window.confirm(confirmationMessage);
+
+  if (!confirmed) {
+    return;
+  }
+
+  const { error } = await cloudClient.from("prospect_interactions").delete().eq("id", interactionId);
+
+  if (error) {
+    setInteractionNotice(error.message);
+    return;
+  }
+
+  await deleteCloudFile(interaction?.attachment?.path);
+  prospect.interactions = prospect.interactions.filter((item) => item.id !== interactionId);
+  prospect.updatedAt = nowIso();
+  await upsertProspectToCloud(prospect);
+  render();
+}
+
+function isMobileProspectLayout() {
+  return mobileProspectLayoutQuery.matches;
+}
+
+function scrollProspectPanelIntoView(panel) {
+  if (!panel || state.activeTab !== "prospects" || !isMobileProspectLayout()) {
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
+function scrollProspectDetailsIntoView() {
+  scrollProspectPanelIntoView(elements.prospectDetailPane);
+}
+
+function scrollProspectListIntoView() {
+  scrollProspectPanelIntoView(elements.prospectRail);
+}
+
+function renderListToggleButton(button, expanded, total, limit) {
+  if (!button) {
+    return;
+  }
+
+  button.textContent = expanded ? `Show Latest ${limit}` : "Show All";
+  button.setAttribute("aria-pressed", String(expanded));
+  button.disabled = total <= limit && !expanded;
+}
+
+function renderProspectList() {
+  const prospects = visibleProspects();
+  const filteredCount = filteredProspects().length;
+  const previousScrollTop = elements.prospectList.scrollTop;
+  elements.prospectList.replaceChildren();
+  renderListToggleButton(elements.showAllProspectsButton, state.showAllProspects, filteredCount, defaultProspectLimit);
+
+  if (prospects.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "saved-notice";
+    empty.textContent = state.isLoadingProspects
+      ? "Loading prospects..."
+      : state.prospects.length ? "No prospects match your filters." : "No prospects yet.";
+    elements.prospectList.append(empty);
+    elements.prospectList.scrollTop = previousScrollTop;
+    return;
+  }
+
+  prospects.forEach((prospect) => {
+    const item = elements.prospectItemTemplate.content.firstElementChild.cloneNode(true);
+    item.classList.toggle("active", prospect.id === state.selectedId);
+    item.querySelector('[data-field="name"]').textContent = prospect.name || "Unnamed prospect";
+    item.querySelector('[data-field="business"]').textContent = prospect.business || prospect.phone || "No business entered";
+    item.querySelector('[data-field="status"]').textContent = normalizeStatus(prospect.status);
+    item.querySelector('[data-field="lastContact"]').textContent = formatDateTime(prospect.interactions?.[0]?.createdAt);
+    item.addEventListener("click", () => {
+      state.selectedId = prospect.id;
+      render();
+      scrollProspectDetailsIntoView();
+    });
+    elements.prospectList.append(item);
+  });
+
+  if (!shouldShowAllProspectMatches() && !state.showAllProspects && filteredCount > defaultProspectLimit) {
+    const hint = document.createElement("p");
+    hint.className = "list-hint";
+    hint.textContent = `Showing the ${defaultProspectLimit} latest prospects. Use search, filters, or Show All to find the rest.`;
+    elements.prospectList.append(hint);
+  }
+
+  if (!shouldShowAllProspectMatches() && state.showAllProspects && filteredCount > defaultProspectLimit) {
+    const hint = document.createElement("p");
+    hint.className = "list-hint";
+    hint.textContent = `Showing all ${filteredCount} prospects.`;
+    elements.prospectList.append(hint);
+  }
+
+  elements.prospectList.scrollTop = previousScrollTop;
+}
+
+function renderSelectOptions(select, defaultLabel, options, selectedValue) {
+  select.replaceChildren();
+
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = defaultLabel;
+  select.append(defaultOption);
+
+  options.forEach((option) => {
+    const item = document.createElement("option");
+    item.value = option.value;
+    item.textContent = option.label;
+    select.append(item);
+  });
+
+  select.value = selectedValue;
+  return select.value;
+}
+
+function ensureSelectOption(select, value) {
+  const cleanValue = String(value || "").trim();
+
+  if (!cleanValue) {
+    return;
+  }
+
+  const optionExists = [...select.options].some((option) => option.value === cleanValue);
+
+  if (optionExists) {
+    return;
+  }
+
+  const option = document.createElement("option");
+  option.value = cleanValue;
+  option.textContent = cleanValue;
+  select.append(option);
+}
+
+function renderFilterOptions() {
+  state.tradeFilter = renderSelectOptions(
+    elements.tradeFilterInput,
+    "All trades",
+    tradeCategoryOptions({ normalizedValues: true, includeInactive: true, includeUsedProspectTrades: true }),
+    state.tradeFilter,
+  );
+  state.statusFilter = renderSelectOptions(
+    elements.statusFilterInput,
+    "All statuses",
+    prospectStatusOptions.map((status) => ({ value: status, label: status })),
+    state.statusFilter,
+  );
+}
+
+function renderUnitList() {
+  const units = filteredUnits();
+  elements.unitList.replaceChildren();
+
+  if (units.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "saved-notice";
+    empty.textContent = state.isLoadingUnits
+      ? "Loading units..."
+      : state.units.length ? "No units match your search." : "No units yet.";
+    elements.unitList.append(empty);
+    return;
+  }
+
+  units.forEach((unit) => {
+    const item = elements.unitItemTemplate.content.firstElementChild.cloneNode(true);
+    item.classList.toggle("active", unit.id === state.selectedUnitId);
+    item.querySelector('[data-field="number"]').textContent = unit.number || "Unnamed unit";
+    item.querySelector('[data-field="availableDate"]').textContent = unit.availableDate
+      ? `Available ${formatDateLabel(unit.availableDate)}`
+      : "No available date";
+    item.querySelector('[data-field="currentPrice"]').textContent = formatMoney(unit.currentPrice);
+    item.querySelector('[data-field="updatedAt"]').textContent = `Updated ${formatDateTime(unit.updatedAt)}`;
+    item.addEventListener("click", () => {
+      state.selectedUnitId = unit.id;
+      render();
+    });
+    elements.unitList.append(item);
+  });
+}
+
+function renderUnitStats() {
+  const totalDocuments = state.units.reduce((count, unit) => {
+    const documents = unit.documents || createEmptyUnitDocuments();
+    return count + (documents.floorPlan ? 1 : 0) + (documents.me ? 1 : 0) + (documents.photos?.length || 0);
+  }, 0);
+
+  elements.unitCount.textContent = state.units.length;
+  elements.unitDocumentCount.textContent = totalDocuments;
+}
+
+function renderUnitForm(unit) {
+  if (!unit) {
+    elements.unitEmptyState.classList.remove("hidden");
+    elements.unitDetailContent.classList.add("hidden");
+    return;
+  }
+
+  elements.unitEmptyState.classList.add("hidden");
+  elements.unitDetailContent.classList.remove("hidden");
+  elements.unitFormTitle.textContent = unit.number || "Unnamed unit";
+  elements.unitNumberInput.value = unit.number || "";
+  elements.unitPsfInput.value = unit.pricePerSqft || "";
+  elements.unitLastOperationInput.value = formatDateForDisplay(unit.lastOperationDate);
+  elements.unitAvailableInput.value = formatDateForDisplay(unit.availableDate);
+  elements.unitCurrentPriceInput.value = unit.currentPrice || "";
+  elements.unitMarketPriceInput.value = unit.marketPrice || "";
+  elements.saveUnitButton.textContent = unit.isDraft ? "Save Unit" : "Update Unit";
+}
+
+function createDocumentCard(title, attachment, deleteType) {
+  const card = document.createElement("article");
+  card.className = "document-card";
+
+  const heading = document.createElement("div");
+  heading.className = "document-card-heading";
+
+  const titleElement = document.createElement("strong");
+  titleElement.textContent = title;
+  heading.append(titleElement);
+
+  if (fileHref(attachment) || attachment?.path) {
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "link-button";
+    deleteButton.type = "button";
+    deleteButton.textContent = "Delete";
+    deleteButton.addEventListener("click", () => deleteUnitDocument(deleteType, attachment.id));
+    heading.append(deleteButton);
+  }
+
+  card.append(heading);
+
+  if (!fileHref(attachment) && !attachment?.path) {
+    const empty = document.createElement("p");
+    empty.className = "document-empty";
+    empty.textContent = "No file attached.";
+    card.append(empty);
+    return card;
+  }
+
+  const link = document.createElement("a");
+  link.className = "attachment-link";
+  link.href = fileHref(attachment);
+  link.download = attachment.name || title;
+  link.target = "_blank";
+  link.rel = "noopener";
+  link.textContent = `${attachment.name || title} (${formatFileSize(attachment.size)})`;
+  card.append(link);
+
+  return card;
+}
+
+function createPhotoCard(photo) {
+  const card = createDocumentCard("Photo", photo, "photo");
+
+  if (fileHref(photo)) {
+    const image = document.createElement("img");
+    image.src = fileHref(photo);
+    image.alt = photo.name || "Unit photo";
+    card.prepend(image);
+  }
+
+  return card;
+}
+
+function renderUnitDocuments(unit) {
+  elements.unitDocumentList.replaceChildren();
+
+  if (!unit) {
+    return;
+  }
+
+  const documents = unit.documents || createEmptyUnitDocuments();
+  const photos = documents.photos || [];
+
+  elements.unitDocumentList.append(
+    createDocumentCard("Unit Floor Plan", documents.floorPlan, "floorPlan"),
+    createDocumentCard("Unit M&E", documents.me, "me"),
+  );
+
+  const photoSection = document.createElement("section");
+  photoSection.className = "photo-section";
+
+  const heading = document.createElement("div");
+  heading.className = "document-card-heading";
+
+  const title = document.createElement("strong");
+  title.textContent = "Unit Photos";
+  heading.append(title);
+  photoSection.append(heading);
+
+  if (photos.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "document-empty";
+    empty.textContent = "No photos attached.";
+    photoSection.append(empty);
+  } else {
+    const grid = document.createElement("div");
+    grid.className = "photo-grid";
+    photos.forEach((photo) => grid.append(createPhotoCard(photo)));
+    photoSection.append(grid);
+  }
+
+  elements.unitDocumentList.append(photoSection);
+}
+
+function renderAgentList() {
+  const agents = visibleAgents();
+  const filteredCount = filteredAgents().length;
+  elements.agentList.replaceChildren();
+  renderListToggleButton(elements.showAllAgentsButton, state.showAllAgents, filteredCount, defaultAgentLimit);
+
+  if (agents.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "saved-notice";
+    empty.textContent = state.isLoadingAgents
+      ? "Loading agents..."
+      : state.agents.length ? "No agents match your search." : "No agents yet.";
+    elements.agentList.append(empty);
+    return;
+  }
+
+  agents.forEach((agent) => {
+    const item = elements.agentItemTemplate.content.firstElementChild.cloneNode(true);
+    item.classList.toggle("active", agent.id === state.selectedAgentId);
+    item.querySelector('[data-field="name"]').textContent = agent.name || "Unnamed agent";
+    item.querySelector('[data-field="agency"]').textContent = agent.agency || agent.phone || "No agency entered";
+    item.querySelector('[data-field="grade"]').textContent = `Grade ${normalizeAgentGrade(agent.grade)}`;
+    item.querySelector('[data-field="lastContact"]').textContent = agent.interactions?.[0]?.createdAt
+      ? formatDateTime(agent.interactions[0].createdAt)
+      : "No notes yet";
+    item.addEventListener("click", () => {
+      state.selectedAgentId = agent.id;
+      render();
+    });
+    elements.agentList.append(item);
+  });
+
+  if (!state.agentSearchTerm.trim() && !state.showAllAgents && filteredCount > defaultAgentLimit) {
+    const hint = document.createElement("p");
+    hint.className = "list-hint";
+    hint.textContent = `Showing the ${defaultAgentLimit} latest agents. Use search or Show All to find the rest.`;
+    elements.agentList.append(hint);
+  }
+
+  if (!state.agentSearchTerm.trim() && state.showAllAgents && filteredCount > defaultAgentLimit) {
+    const hint = document.createElement("p");
+    hint.className = "list-hint";
+    hint.textContent = `Showing all ${filteredCount} agents.`;
+    elements.agentList.append(hint);
+  }
+}
+
+function renderAgentStats() {
+  elements.agentCount.textContent = state.agents.length;
+}
+
+function renderAgentForm(agent) {
+  if (!agent) {
+    elements.agentEmptyState.classList.remove("hidden");
+    elements.agentDetailContent.classList.add("hidden");
+    return;
+  }
+
+  elements.agentEmptyState.classList.add("hidden");
+  elements.agentDetailContent.classList.remove("hidden");
+  elements.agentFormTitle.textContent = agent.name || "Unnamed agent";
+  elements.agentNameInput.value = agent.name || "";
+  elements.agentAgencyInput.value = agent.agency || "";
+  elements.agentPhoneInput.value = agent.phone || "";
+  elements.agentEmailInput.value = agent.email || "";
+  elements.agentTelegramInput.value = agent.telegram || "";
+  elements.agentWebsiteInput.value = agent.website || "";
+  elements.agentSocialInput.value = agent.social || "";
+  elements.agentGradeInput.value = normalizeAgentGrade(agent.grade);
+  elements.saveAgentButton.textContent = agent.isDraft ? "Save Agent" : "Update Agent";
+}
+
+function renderAgentTimeline(agent) {
+  elements.agentTimeline.replaceChildren();
+
+  if (!agent) {
+    return;
+  }
+
+  const interactions = agent.interactions || [];
+
+  if (interactions.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "saved-notice";
+    empty.textContent = "No agent notes recorded yet.";
+    elements.agentTimeline.append(empty);
+    return;
+  }
+
+  interactions.forEach((interaction) => {
+    const item = elements.agentTimelineItemTemplate.content.firstElementChild.cloneNode(true);
+    item.querySelector('[data-field="createdAt"]').textContent = formatDateTime(interaction.createdAt);
+    item.querySelector('[data-field="note"]').textContent = interaction.note;
+    item.querySelector('[data-action="delete-agent-interaction"]').addEventListener("click", () => {
+      deleteAgentInteraction(interaction.id);
+    });
+    elements.agentTimeline.append(item);
+  });
+}
+
+function renderStats() {
+  const totalInteractions = state.prospects.reduce(
+    (count, prospect) => count + (prospect.interactions?.length || 0),
+    0,
+  );
+
+  elements.prospectCount.textContent = state.prospects.length;
+  elements.interactionCount.textContent = totalInteractions;
+}
+
+function renderForm(prospect) {
+  if (!prospect) {
+    elements.emptyState.classList.remove("hidden");
+    elements.detailContent.classList.add("hidden");
+    return;
+  }
+
+  elements.emptyState.classList.add("hidden");
+  elements.detailContent.classList.remove("hidden");
+  elements.formTitle.textContent = prospect.name || "Unnamed prospect";
+  elements.nameInput.value = prospect.name || "";
+  elements.businessInput.value = prospect.business || "";
+  elements.agencyInput.value = prospect.agency || "";
+  elements.agentInput.value = prospect.agent || "";
+  ensureSelectOption(elements.buildingInput, prospect.building);
+  elements.buildingInput.value = prospect.building || "";
+  elements.unitInput.value = prospect.unit || "";
+  renderSelectOptions(elements.tradeInput, "Select trade", tradeCategoryOptions(), prospect.trade || "");
+  ensureSelectOption(elements.tradeInput, prospect.trade);
+  elements.tradeInput.value = prospect.trade || "";
+  elements.phoneInput.value = prospect.phone || "";
+  elements.emailInput.value = prospect.email || "";
+  elements.telegramInput.value = prospect.telegram || "";
+  elements.websiteInput.value = prospect.website || "";
+  elements.socialInput.value = prospect.social || "";
+  elements.statusInput.value = normalizeStatus(prospect.status);
+  elements.saveProspectButton.textContent = prospect.isDraft ? "Save Prospect" : "Update Prospect";
+}
+
+function renderTimeline(prospect) {
+  elements.timeline.replaceChildren();
+
+  if (!prospect) {
+    return;
+  }
+
+  const interactions = prospect.interactions || [];
+
+  if (interactions.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "saved-notice";
+    empty.textContent = "No interactions recorded yet.";
+    elements.timeline.append(empty);
+    return;
+  }
+
+  interactions.forEach((interaction) => {
+    const item = elements.timelineItemTemplate.content.firstElementChild.cloneNode(true);
+    const attachmentLink = item.querySelector('[data-field="attachment"]');
+    item.querySelector('[data-field="createdAt"]').textContent = formatDateTime(interaction.createdAt);
+    item.querySelector('[data-field="note"]').textContent = interaction.note;
+    if (fileHref(interaction.attachment)) {
+      attachmentLink.classList.remove("hidden");
+      attachmentLink.href = fileHref(interaction.attachment);
+      attachmentLink.download = interaction.attachment.name || "attachment";
+      attachmentLink.textContent = `${interaction.attachment.name || "Attachment"} (${formatFileSize(interaction.attachment.size)})`;
+    }
+    item.querySelector('[data-action="delete-interaction"]').addEventListener("click", () => {
+      deleteInteraction(interaction.id);
+    });
+    elements.timeline.append(item);
+  });
+}
+
+function renderTabs() {
+  const showingUnits = state.activeTab === "units";
+  const showingAgents = state.activeTab === "agents";
+  const showingAdmin = state.activeTab === "admin" && state.currentProfile?.role === "admin";
+  const showingProspects = !showingUnits && !showingAgents && !showingAdmin;
+  const isAdmin = state.currentProfile?.role === "admin";
+
+  elements.prospectsTabButton.classList.toggle("active", showingProspects);
+  elements.unitsTabButton.classList.toggle("active", showingUnits);
+  elements.agentsTabButton.classList.toggle("active", showingAgents);
+  elements.adminTabButton.classList.toggle("active", showingAdmin);
+  elements.adminTabButton.classList.toggle("hidden", !isAdmin);
+  elements.prospectsTabButton.setAttribute("aria-selected", String(showingProspects));
+  elements.unitsTabButton.setAttribute("aria-selected", String(showingUnits));
+  elements.agentsTabButton.setAttribute("aria-selected", String(showingAgents));
+  elements.adminTabButton.setAttribute("aria-selected", String(showingAdmin));
+  elements.prospectsTabPanel.classList.toggle("hidden", !showingProspects);
+  elements.unitsTabPanel.classList.toggle("hidden", !showingUnits);
+  elements.agentsTabPanel.classList.toggle("hidden", !showingAgents);
+  elements.adminTabPanel.classList.toggle("hidden", !showingAdmin);
+  elements.prospectTopbarActions.classList.toggle("hidden", !showingProspects);
+  elements.unitTopbarActions.classList.toggle("hidden", !showingUnits);
+  elements.agentTopbarActions.classList.toggle("hidden", !showingAgents);
+}
+
+function setActiveTab(tab) {
+  if (tab === "admin" && state.currentProfile?.role !== "admin") {
+    return;
+  }
+
+  state.activeTab = tab;
+  render();
+}
+
+function renderAccount() {
+  const email = state.currentUser?.email || "";
+  const role = state.currentProfile?.role ? ` · ${state.currentProfile.role}` : "";
+  elements.currentUserText.textContent = email ? `${email}${role}` : "";
+}
+
+function renderTradeCategoryList() {
+  elements.tradeCategoryList.replaceChildren();
+
+  if (state.currentProfile?.role !== "admin") {
+    return;
+  }
+
+  if (state.isLoadingTradeCategories) {
+    const loading = document.createElement("p");
+    loading.className = "saved-notice";
+    loading.textContent = "Loading trade categories...";
+    elements.tradeCategoryList.append(loading);
+    return;
+  }
+
+  if (state.tradeCategories.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "saved-notice";
+    empty.textContent = "No trade categories yet.";
+    elements.tradeCategoryList.append(empty);
+    return;
+  }
+
+  state.tradeCategories.forEach((category) => {
+    const item = document.createElement("article");
+    item.className = "category-card";
+    item.classList.toggle("inactive", !category.isActive);
+
+    const header = document.createElement("header");
+    const name = document.createElement("strong");
+    const status = document.createElement("span");
+    name.textContent = category.name;
+    status.className = `status-pill ${category.isActive ? "" : "inactive"}`.trim();
+    status.textContent = category.isActive ? "Active" : "Inactive";
+    header.append(name, status);
+
+    const actions = document.createElement("div");
+    actions.className = "category-actions";
+
+    const toggleButton = document.createElement("button");
+    toggleButton.className = "secondary-button compact-inline-button";
+    toggleButton.type = "button";
+    toggleButton.textContent = category.isActive ? "Deactivate" : "Reactivate";
+    toggleButton.disabled = !category.id;
+    toggleButton.addEventListener("click", () => {
+      updateTradeCategoryStatus(category.id, !category.isActive);
+    });
+
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "danger-button compact-inline-button";
+    deleteButton.type = "button";
+    deleteButton.textContent = "Delete";
+    deleteButton.disabled = !category.id;
+    deleteButton.addEventListener("click", () => {
+      deleteTradeCategory(category.id, category.name);
+    });
+
+    actions.append(toggleButton, deleteButton);
+    item.append(header, actions);
+    elements.tradeCategoryList.append(item);
+  });
+}
+
+function renderUsers() {
+  elements.userList.replaceChildren();
+
+  if (state.currentProfile?.role !== "admin") {
+    return;
+  }
+
+  if (state.isLoadingUsers) {
+    const loading = document.createElement("p");
+    loading.className = "saved-notice";
+    loading.textContent = "Loading approved users...";
+    elements.userList.append(loading);
+    return;
+  }
+
+  if (state.users.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "saved-notice";
+    empty.textContent = "No users found.";
+    elements.userList.append(empty);
+    return;
+  }
+
+  state.users.forEach((user) => {
+    const card = document.createElement("article");
+    card.className = "user-card";
+
+    const header = document.createElement("header");
+    const details = document.createElement("div");
+    const name = document.createElement("strong");
+    const email = document.createElement("small");
+    const status = document.createElement("span");
+    name.textContent = user.full_name || "Unnamed user";
+    email.textContent = user.email || "";
+    status.className = "status-pill";
+    status.textContent = user.active ? "Active" : "Inactive";
+    details.append(name, email);
+    header.append(details, status);
+
+    const controls = document.createElement("div");
+    controls.className = "user-controls";
+
+    const roleSelect = document.createElement("select");
+    roleSelect.innerHTML = '<option value="member">Member</option><option value="admin">Admin</option>';
+    roleSelect.value = user.role === "admin" ? "admin" : "member";
+
+    const activeSelect = document.createElement("select");
+    activeSelect.innerHTML = '<option value="true">Active</option><option value="false">Inactive</option>';
+    activeSelect.value = String(Boolean(user.active));
+
+    const updateButton = document.createElement("button");
+    updateButton.className = "primary-button";
+    updateButton.type = "button";
+    updateButton.textContent = "Update";
+    updateButton.addEventListener("click", () => updateUserAccess({
+      userId: user.id,
+      fullName: user.full_name || "",
+      role: roleSelect.value,
+      active: activeSelect.value === "true",
+    }));
+
+    controls.append(roleSelect, activeSelect, updateButton);
+    card.append(header, controls);
+    elements.userList.append(card);
+  });
+}
+
+function render() {
+  const selected = getSelectedProspect();
+  const selectedUnit = getSelectedUnit();
+  const selectedAgent = getSelectedAgent();
+  renderTabs();
+  renderAccount();
+  renderStats();
+  renderFilterOptions();
+  renderProspectList();
+  renderForm(selected);
+  renderTimeline(selected);
+  renderUnitStats();
+  renderUnitList();
+  renderUnitForm(selectedUnit);
+  renderUnitDocuments(selectedUnit);
+  renderAgentStats();
+  renderAgentList();
+  renderAgentForm(selectedAgent);
+  renderAgentTimeline(selectedAgent);
+  renderTradeCategoryList();
+  renderUsers();
+}
+
+function showSignedOut(message = "") {
+  elements.authScreen.classList.remove("hidden");
+  elements.appShell.classList.add("hidden");
+  elements.authNotice.textContent = message;
+}
+
+function showSignedIn() {
+  elements.authScreen.classList.add("hidden");
+  elements.appShell.classList.remove("hidden");
+}
+
+async function loadCurrentProfile() {
+  const { data, error } = await cloudClient
+    .from("profiles")
+    .select("id, email, full_name, role, active")
+    .eq("id", state.currentUser.id)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  state.currentProfile = data;
+  return data;
+}
+
+async function loadAllCloudData() {
+  const tasks = [
+    loadCloudSection("isLoadingTradeCategories", loadTradeCategories, (error) => {
+      setTradeCategoryNotice(error.message || "Could not load trade categories.");
+    }),
+    loadCloudSection("isLoadingProspects", loadProspects, (error) => {
+      setNotice(error.message || "Could not load prospects.");
+    }),
+    loadCloudSection("isLoadingUnits", loadUnits, (error) => {
+      setUnitNotice(error.message || "Could not load units.");
+    }),
+    loadCloudSection("isLoadingAgents", loadAgents, (error) => {
+      setAgentNotice(error.message || "Could not load agents.");
+    }),
+  ];
+
+  if (state.currentProfile?.role === "admin") {
+    tasks.push(loadCloudSection("isLoadingUsers", loadUsers, (error) => {
+      elements.adminNotice.textContent = error.message || "Could not load users.";
+    }));
+  }
+
+  await Promise.allSettled(tasks);
+}
+
+async function loadUsers() {
+  const { data, error } = await cloudClient.functions.invoke("manage-users", {
+    body: { action: "list" },
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  if (data?.error) {
+    throw new Error(data.error);
+  }
+
+  state.users = data?.users || [];
+}
+
+async function loadCloudSection(loadingKey, loader, onError) {
+  state[loadingKey] = true;
+  render();
+
+  try {
+    await loader();
+  } catch (error) {
+    onError(error);
+  } finally {
+    state[loadingKey] = false;
+    render();
+  }
+}
+
+async function refreshAppData() {
+  try {
+    await loadCurrentProfile();
+
+    if (!state.currentProfile.active) {
+      state.prospects = [];
+      state.units = [];
+      state.agents = [];
+      state.users = [];
+      state.isLoadingProspects = false;
+      state.isLoadingUnits = false;
+      state.isLoadingAgents = false;
+      state.isLoadingTradeCategories = false;
+      state.isLoadingUsers = false;
+      showSignedOut("Your account exists, but access has not been approved yet.");
+      return;
+    }
+
+    state.isLoadingProspects = true;
+    state.isLoadingUnits = true;
+    state.isLoadingAgents = true;
+    state.isLoadingTradeCategories = true;
+    state.isLoadingUsers = state.currentProfile?.role === "admin";
+    showSignedIn();
+    render();
+    void loadAllCloudData();
+  } catch (error) {
+    showSignedOut(error.message || "Could not load the CRM.");
+  }
+}
+
+async function handleLogin(formData) {
+  const email = formData.get("email").toString().trim();
+  const password = formData.get("password").toString();
+  elements.authNotice.textContent = "Signing in...";
+
+  const { data, error } = await cloudClient.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    elements.authNotice.textContent = error.message;
+    return;
+  }
+
+  state.session = data.session;
+  state.currentUser = data.user;
+  await refreshAppData();
+}
+
+async function handleSignup() {
+  const email = elements.authEmailInput.value.trim();
+  const password = elements.authPasswordInput.value;
+
+  if (!email || !password) {
+    elements.authNotice.textContent = "Enter an email and password first.";
+    return;
+  }
+
+  elements.authNotice.textContent = "Creating account...";
+  const { data, error } = await cloudClient.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { full_name: email.split("@")[0] },
+    },
+  });
+
+  if (error) {
+    elements.authNotice.textContent = error.message;
+    return;
+  }
+
+  if (data.session && data.user) {
+    state.session = data.session;
+    state.currentUser = data.user;
+    await refreshAppData();
+    return;
+  }
+
+  elements.authNotice.textContent = "Check your email to confirm the account, then log in.";
+}
+
+async function handleLogout() {
+  await cloudClient.auth.signOut();
+  state.session = null;
+  state.currentUser = null;
+  state.currentProfile = null;
+  state.users = [];
+  state.prospects = [];
+  state.units = [];
+  state.agents = [];
+  state.isLoadingProspects = false;
+  state.isLoadingUnits = false;
+  state.isLoadingAgents = false;
+  state.isLoadingTradeCategories = false;
+  state.isLoadingUsers = false;
+  showSignedOut("");
+}
+
+async function inviteUser(formData) {
+  const email = formData.get("email").toString().trim();
+  const fullName = formData.get("fullName").toString().trim();
+  const role = formData.get("role").toString();
+  elements.adminNotice.textContent = "Sending invite...";
+
+  try {
+    const { data, error } = await cloudClient.functions.invoke("manage-users", {
+      body: {
+        action: "invite",
+        email,
+        fullName,
+        role,
+        redirectTo: globalThis.location.origin,
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    if (data?.error) {
+      throw new Error(data.error);
+    }
+
+    elements.inviteUserForm.reset();
+    elements.adminNotice.textContent = "User invited and approved.";
+    await loadUsers();
+    renderUsers();
+  } catch (error) {
+    elements.adminNotice.textContent = error.message || "Could not invite user.";
+  }
+}
+
+async function updateUserAccess(payload) {
+  elements.adminNotice.textContent = "Updating user...";
+
+  try {
+    const { data, error } = await cloudClient.functions.invoke("manage-users", {
+      body: { action: "update", ...payload },
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    if (data?.error) {
+      throw new Error(data.error);
+    }
+
+    elements.adminNotice.textContent = "User access updated.";
+    await loadUsers();
+    renderUsers();
+  } catch (error) {
+    elements.adminNotice.textContent = error.message || "Could not update user.";
+  }
+}
+
+async function addTradeCategory(formData) {
+  if (state.currentProfile?.role !== "admin") {
+    return;
+  }
+
+  const category = cleanTradeCategory(formData.get("tradeCategory"));
+
+  if (!category) {
+    setTradeCategoryNotice("Enter a trade category first.");
+    return;
+  }
+
+  const categoryExists = state.tradeCategories.some(
+    (item) => normalizeTradeCategoryValue(item.name) === normalizeTradeCategoryValue(category),
+  );
+
+  if (categoryExists) {
+    setTradeCategoryNotice("That category already exists. Reactivate it if needed.");
+    return;
+  }
+
+  setTradeCategoryNotice("Saving category...");
+
+  try {
+    const { data, error } = await cloudClient
+      .from("trade_categories")
+      .insert({
+        name: category,
+        is_active: true,
+        created_by: state.currentUser?.id || null,
+      })
+      .select("id, name, is_active")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    state.tradeCategories = mergeTradeCategories(state.tradeCategories, [{
+      id: data.id,
+      name: data.name || category,
+      isActive: data.is_active,
+    }]);
+    elements.tradeCategoryForm.reset();
+    refreshTradeCategoryUi();
+    setTradeCategoryNotice("Trade category added.");
+  } catch (error) {
+    const isDuplicate = error.code === "23505" || /duplicate/i.test(error.message || "");
+    setTradeCategoryNotice(isDuplicate ? "That category already exists." : error.message || "Could not save category.");
+  }
+}
+
+function refreshTradeCategoryUi() {
+  saveStoredTradeCategories();
+  renderFilterOptions();
+  renderForm(getSelectedProspect());
+  renderTradeCategoryList();
+}
+
+async function updateTradeCategoryStatus(categoryId, isActive) {
+  if (state.currentProfile?.role !== "admin" || !categoryId) {
+    return;
+  }
+
+  setTradeCategoryNotice(isActive ? "Reactivating category..." : "Deactivating category...");
+
+  try {
+    const { data, error } = await cloudClient
+      .from("trade_categories")
+      .update({ is_active: isActive })
+      .eq("id", categoryId)
+      .select("id, name, is_active")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    state.tradeCategories = mergeTradeCategories(
+      state.tradeCategories.filter((category) => category.id !== categoryId),
+      [{
+        id: data.id,
+        name: data.name,
+        isActive: data.is_active,
+      }],
+    );
+    refreshTradeCategoryUi();
+    setTradeCategoryNotice(isActive ? "Trade category reactivated." : "Trade category deactivated.");
+  } catch (error) {
+    setTradeCategoryNotice(error.message || "Could not update category.");
+  }
+}
+
+async function deleteTradeCategory(categoryId, categoryName) {
+  if (state.currentProfile?.role !== "admin" || !categoryId) {
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `Delete "${categoryName}" from Trade Categories? Existing prospects with this trade will keep their saved text, but this category will be removed from future dropdowns.`,
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  setTradeCategoryNotice("Deleting category...");
+
+  try {
+    const { error } = await cloudClient
+      .from("trade_categories")
+      .delete()
+      .eq("id", categoryId);
+
+    if (error) {
+      throw error;
+    }
+
+    state.tradeCategories = state.tradeCategories.filter((category) => category.id !== categoryId);
+    refreshTradeCategoryUi();
+    setTradeCategoryNotice("Trade category deleted.");
+  } catch (error) {
+    setTradeCategoryNotice(error.message || "Could not delete category.");
+  }
+}
+
+async function initializeApp() {
+  if (!cloudClient) {
+    showSignedOut("Supabase could not load. Check your internet connection and refresh.");
+    return;
+  }
+
+  requireCloudClient();
+  const { data } = await cloudClient.auth.getSession();
+  state.session = data.session;
+  state.currentUser = data.session?.user || null;
+
+  cloudClient.auth.onAuthStateChange((_event, session) => {
+    state.session = session;
+    state.currentUser = session?.user || null;
+  });
+
+  if (!state.currentUser) {
+    showSignedOut("");
+    return;
+  }
+
+  await refreshAppData();
+}
+
+function csvEscape(value) {
+  return `"${String(value ?? "").replaceAll('"', '""')}"`;
+}
+
+function parseCsv(csvText) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+  const text = csvText.replace(/^\uFEFF/, "");
+
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    const nextCharacter = text[index + 1];
+
+    if (inQuotes) {
+      if (character === '"' && nextCharacter === '"') {
+        field += '"';
+        index += 1;
+      } else if (character === '"') {
+        inQuotes = false;
+      } else {
+        field += character;
+      }
+      continue;
+    }
+
+    if (character === '"') {
+      inQuotes = true;
+    } else if (character === ",") {
+      row.push(field);
+      field = "";
+    } else if (character === "\n" || character === "\r") {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+
+      if (character === "\r" && nextCharacter === "\n") {
+        index += 1;
+      }
+    } else {
+      field += character;
+    }
+  }
+
+  if (field || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+
+  return rows.filter((csvRow) => csvRow.some((value) => value.trim()));
+}
+
+function normalizeColumnName(value) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function findColumn(headers, aliases) {
+  const normalizedHeaders = headers.map(normalizeColumnName);
+
+  return aliases
+    .map(normalizeColumnName)
+    .map((alias) => normalizedHeaders.indexOf(alias))
+    .find((index) => index >= 0);
+}
+
+function cell(row, index) {
+  if (index === undefined || index < 0) {
+    return "";
+  }
+
+  return (row[index] || "").trim();
+}
+
+function parseImportedDate(value) {
+  const cleanValue = String(value || "").trim();
+  const displayMatch = cleanValue.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:[,\s]+(\d{1,2}):(\d{2}))?$/);
+
+  if (displayMatch) {
+    const day = Number(displayMatch[1]);
+    const month = Number(displayMatch[2]);
+    const year = Number(displayMatch[3]);
+    const hours = Number(displayMatch[4] || 0);
+    const minutes = Number(displayMatch[5] || 0);
+    const date = new Date(year, month - 1, day, hours, minutes);
+
+    if (
+      !Number.isNaN(date.getTime()) &&
+      date.getFullYear() === year &&
+      date.getMonth() === month - 1 &&
+      date.getDate() === day
+    ) {
+      return date.toISOString();
+    }
+  }
+
+  const parsedDate = new Date(value);
+
+  if (value && !Number.isNaN(parsedDate.getTime())) {
+    return parsedDate.toISOString();
+  }
+
+  return nowIso();
+}
+
+function parseImportedInputDate(value) {
+  const cleanValue = String(value || "").trim();
+  const parsedDisplayDate = parseDisplayDate(cleanValue);
+
+  if (parsedDisplayDate) {
+    return parsedDisplayDate;
+  }
+
+  const parsedDate = new Date(value);
+
+  if (value && !Number.isNaN(parsedDate.getTime())) {
+    return formatDateForInput(parsedDate.toISOString());
+  }
+
+  return "";
+}
+
+function mergeImportedProspects(importedProspects) {
+  const existingByKey = new Map(
+    state.prospects.map((prospect) => [prospectMergeKey(prospect), prospect]),
+  );
+
+  let addedCount = 0;
+  let updatedCount = 0;
+  let interactionCount = 0;
+  let firstImportedId = null;
+
+  importedProspects.forEach((importedProspect) => {
+    const key = prospectMergeKey(importedProspect);
+    const existingProspect = existingByKey.get(key);
+
+    if (existingProspect) {
+      existingProspect.agency = importedProspect.agency || existingProspect.agency || "";
+      existingProspect.agent = importedProspect.agent || existingProspect.agent || "";
+      existingProspect.building = importedProspect.building || existingProspect.building || "";
+      existingProspect.unit = importedProspect.unit || existingProspect.unit || "";
+      existingProspect.trade = importedProspect.trade || existingProspect.trade || "";
+      existingProspect.email = importedProspect.email || existingProspect.email || "";
+      existingProspect.telegram = importedProspect.telegram || existingProspect.telegram || "";
+      existingProspect.website = importedProspect.website || existingProspect.website || "";
+      existingProspect.social = importedProspect.social || existingProspect.social || "";
+      existingProspect.status = normalizeStatus(importedProspect.status || existingProspect.status);
+      existingProspect.updatedAt = nowIso();
+      existingProspect.interactions = existingProspect.interactions || [];
+      const existingInteractionKeys = new Set(
+        existingProspect.interactions.map((interaction) => `${interaction.createdAt}|${interaction.note}`),
+      );
+      const newInteractions = importedProspect.interactions.filter(
+        (interaction) => !existingInteractionKeys.has(`${interaction.createdAt}|${interaction.note}`),
+      );
+      existingProspect.interactions.unshift(...newInteractions);
+      existingProspect.interactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      updatedCount += 1;
+      interactionCount += newInteractions.length;
+      firstImportedId = firstImportedId || existingProspect.id;
+      return;
+    }
+
+    state.prospects.unshift(importedProspect);
+    existingByKey.set(key, importedProspect);
+    addedCount += 1;
+    interactionCount += importedProspect.interactions.length;
+    firstImportedId = firstImportedId || importedProspect.id;
+  });
+
+  return { addedCount, updatedCount, interactionCount, firstImportedId };
+}
+
+function prospectsFromCsvRows(rows) {
+  if (rows.length < 2) {
+    return [];
+  }
+
+  const headers = rows[0];
+  const columns = {
+    name: findColumn(headers, ["Name", "Prospect Name", "Contact Name", "Tenant Name"]),
+    business:
+      findColumn(headers, ["Business Name", "Business", "Company", "Company Name", "Organization"]),
+    agency: findColumn(headers, ["Agency", "Agency Name", "Brokerage"]),
+    agent: findColumn(headers, ["Agent", "Agent Name", "Representative", "Rep"]),
+    building: findColumn(headers, ["Building", "Building Name", "Property", "Property Name"]),
+    unit: findColumn(headers, ["Unit Number", "Unit No", "Unit", "Suite", "Shop Unit"]),
+    trade: findColumn(headers, ["Trade", "Trade Type", "Business Type", "Category", "Use"]),
+    phone:
+      findColumn(headers, ["Contact Number", "Phone", "Phone Number", "Mobile", "Telephone", "Tel"]),
+    email: findColumn(headers, ["Email Address", "Email", "E-mail", "Mail"]),
+    telegram: findColumn(headers, ["Telegram Handle", "Telegram", "Telegram Username"]),
+    website: findColumn(headers, ["Website", "Web Site", "URL", "Site"]),
+    social: findColumn(headers, ["Social Media", "Social", "Social Link", "Social Links", "LinkedIn", "Instagram"]),
+    status: findColumn(headers, ["Status", "Stage"]),
+    interactionTimestamp:
+      findColumn(headers, [
+        "Interaction Timestamp",
+        "Timestamp",
+        "Interaction Time",
+        "Date",
+        "Created At",
+        "Last Contact",
+      ]),
+    interactionNote:
+      findColumn(headers, ["Interaction Note", "Note", "Notes", "Interaction", "Comments", "Comment"]),
+  };
+  const importedByKey = new Map();
+
+  rows.slice(1).forEach((row) => {
+    const name = cell(row, columns.name);
+    const business = cell(row, columns.business);
+    const agency = cell(row, columns.agency);
+    const agent = cell(row, columns.agent);
+    const building = cell(row, columns.building);
+    const unit = cell(row, columns.unit);
+    const trade = cell(row, columns.trade);
+    const phone = cell(row, columns.phone);
+    const email = cell(row, columns.email);
+    const telegram = cell(row, columns.telegram);
+    const website = cell(row, columns.website);
+    const social = cell(row, columns.social);
+    const status = normalizeStatus(cell(row, columns.status));
+    const note = cell(row, columns.interactionNote);
+
+    if (!name && !business && !agency && !agent && !building && !unit && !trade && !phone && !email && !telegram && !website && !social) {
+      return;
+    }
+
+    if (!name || !trade) {
+      return;
+    }
+
+    const key = prospectMergeKey({ name, business, agency, agent, building, unit, phone, email, telegram });
+
+    if (!importedByKey.has(key)) {
+      importedByKey.set(key, {
+        id: createId(),
+        name,
+        business,
+        agency,
+        agent,
+        building,
+        unit,
+        trade,
+        phone,
+        email,
+        telegram,
+        website,
+        social,
+        status,
+        isDraft: false,
+        createdAt: nowIso(),
+        updatedAt: nowIso(),
+        interactions: [],
+      });
+    }
+
+    const prospect = importedByKey.get(key);
+    prospect.agency = agency || prospect.agency;
+    prospect.agent = agent || prospect.agent;
+    prospect.building = building || prospect.building;
+    prospect.unit = unit || prospect.unit;
+    prospect.trade = trade || prospect.trade;
+    prospect.email = email || prospect.email;
+    prospect.telegram = telegram || prospect.telegram;
+    prospect.website = website || prospect.website;
+    prospect.social = social || prospect.social;
+    prospect.status = normalizeStatus(status || prospect.status);
+
+    if (note) {
+      prospect.interactions.push({
+        id: createId(),
+        note,
+        createdAt: parseImportedDate(cell(row, columns.interactionTimestamp)),
+        attachment: null,
+      });
+    }
+  });
+
+  return [...importedByKey.values()].map((prospect) => ({
+    ...prospect,
+    interactions: prospect.interactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+  }));
+}
+
+function unitsFromCsvRows(rows) {
+  if (rows.length < 2) {
+    return [];
+  }
+
+  const headers = rows[0];
+  const columns = {
+    number: findColumn(headers, ["Unit Number", "Unit No", "Unit", "Suite", "Shop Unit"]),
+    pricePerSqft: findColumn(headers, ["Price Per Square Foot", "Price PSF", "PSF", "Price/SF", "Price Per Sqft"]),
+    lastOperationDate: findColumn(headers, ["Last Date of Operation", "Last Operation Date", "Last Operated", "Operation End Date"]),
+    availableDate: findColumn(headers, ["Available Date", "Availability Date", "Available From"]),
+    currentPrice: findColumn(headers, ["Current Price", "Current Rent", "Asking Price", "Asking Rent"]),
+    marketPrice: findColumn(headers, ["Market Price", "Market Rent", "Estimated Market Price", "Estimated Market Rent"]),
+  };
+  const importedByNumber = new Map();
+
+  rows.slice(1).forEach((row) => {
+    const number = cell(row, columns.number);
+
+    if (!number) {
+      return;
+    }
+
+    const key = normalizeFilterValue(number);
+
+    if (!importedByNumber.has(key)) {
+      importedByNumber.set(key, {
+        id: createId(),
+        number,
+        pricePerSqft: "",
+        lastOperationDate: "",
+        availableDate: "",
+        currentPrice: "",
+        marketPrice: "",
+        isDraft: false,
+        createdAt: nowIso(),
+        updatedAt: nowIso(),
+        documents: createEmptyUnitDocuments(),
+      });
+    }
+
+    const unit = importedByNumber.get(key);
+    unit.pricePerSqft = cell(row, columns.pricePerSqft) || unit.pricePerSqft;
+    unit.lastOperationDate = parseImportedInputDate(cell(row, columns.lastOperationDate)) || unit.lastOperationDate;
+    unit.availableDate = parseImportedInputDate(cell(row, columns.availableDate)) || unit.availableDate;
+    unit.currentPrice = cell(row, columns.currentPrice) || unit.currentPrice;
+    unit.marketPrice = cell(row, columns.marketPrice) || unit.marketPrice;
+  });
+
+  return [...importedByNumber.values()];
+}
+
+function mergeImportedUnits(importedUnits) {
+  const existingByNumber = new Map(
+    state.units.map((unit) => [normalizeFilterValue(unit.number), unit]),
+  );
+
+  let addedCount = 0;
+  let updatedCount = 0;
+  let firstImportedId = null;
+
+  importedUnits.forEach((importedUnit) => {
+    const key = normalizeFilterValue(importedUnit.number);
+    const existingUnit = existingByNumber.get(key);
+
+    if (existingUnit) {
+      existingUnit.pricePerSqft = importedUnit.pricePerSqft || existingUnit.pricePerSqft || "";
+      existingUnit.lastOperationDate = importedUnit.lastOperationDate || existingUnit.lastOperationDate || "";
+      existingUnit.availableDate = importedUnit.availableDate || existingUnit.availableDate || "";
+      existingUnit.currentPrice = importedUnit.currentPrice || existingUnit.currentPrice || "";
+      existingUnit.marketPrice = importedUnit.marketPrice || existingUnit.marketPrice || "";
+      existingUnit.documents = existingUnit.documents || createEmptyUnitDocuments();
+      existingUnit.isDraft = false;
+      existingUnit.updatedAt = nowIso();
+      updatedCount += 1;
+      firstImportedId = firstImportedId || existingUnit.id;
+      return;
+    }
+
+    state.units.unshift(importedUnit);
+    existingByNumber.set(key, importedUnit);
+    addedCount += 1;
+    firstImportedId = firstImportedId || importedUnit.id;
+  });
+
+  return { addedCount, updatedCount, firstImportedId };
+}
+
+function agentsFromCsvRows(rows) {
+  if (rows.length < 2) {
+    return [];
+  }
+
+  const headers = rows[0];
+  const columns = {
+    name: findColumn(headers, ["Agent Name", "Name", "Agent"]),
+    agency: findColumn(headers, ["Agency", "Agency Name", "Brokerage"]),
+    phone: findColumn(headers, ["Contact Number", "Phone", "Phone Number", "Mobile", "Telephone", "Tel"]),
+    email: findColumn(headers, ["Email Address", "Email", "E-mail", "Mail"]),
+    telegram: findColumn(headers, ["Telegram Handle", "Telegram", "Telegram Username"]),
+    website: findColumn(headers, ["Website", "Web Site", "URL", "Site"]),
+    social: findColumn(headers, ["Social Media", "Social", "Social Link", "Social Links", "LinkedIn", "Instagram"]),
+    grade: findColumn(headers, ["Grade", "Agent Grade", "Rating"]),
+    interactionTimestamp:
+      findColumn(headers, ["Interaction Timestamp", "Timestamp", "Interaction Time", "Date", "Created At", "Last Contact"]),
+    interactionNote: findColumn(headers, ["Interaction Note", "Note", "Notes", "Interaction", "Comments", "Comment"]),
+  };
+  const importedByKey = new Map();
+
+  rows.slice(1).forEach((row) => {
+    const name = cell(row, columns.name);
+    const agency = cell(row, columns.agency);
+    const phone = cell(row, columns.phone);
+    const email = cell(row, columns.email);
+    const telegram = cell(row, columns.telegram);
+    const website = cell(row, columns.website);
+    const social = cell(row, columns.social);
+    const grade = normalizeAgentGrade(cell(row, columns.grade));
+    const note = cell(row, columns.interactionNote);
+
+    if (!name) {
+      return;
+    }
+
+    const key = agentMergeKey({ name, agency, phone, email, telegram });
+
+    if (!importedByKey.has(key)) {
+      importedByKey.set(key, {
+        id: createId(),
+        name,
+        agency,
+        phone,
+        email,
+        telegram,
+        website,
+        social,
+        grade,
+        isDraft: false,
+        createdAt: nowIso(),
+        updatedAt: nowIso(),
+        interactions: [],
+      });
+    }
+
+    const agent = importedByKey.get(key);
+    agent.agency = agency || agent.agency;
+    agent.phone = phone || agent.phone;
+    agent.email = email || agent.email;
+    agent.telegram = telegram || agent.telegram;
+    agent.website = website || agent.website;
+    agent.social = social || agent.social;
+    agent.grade = normalizeAgentGrade(grade || agent.grade);
+
+    if (note) {
+      agent.interactions.push({
+        id: createId(),
+        note,
+        createdAt: parseImportedDate(cell(row, columns.interactionTimestamp)),
+      });
+    }
+  });
+
+  return [...importedByKey.values()].map((agent) => ({
+    ...agent,
+    interactions: agent.interactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+  }));
+}
+
+function mergeImportedAgents(importedAgents) {
+  const existingByKey = new Map(
+    state.agents.map((agent) => [agentMergeKey(agent), agent]),
+  );
+
+  let addedCount = 0;
+  let updatedCount = 0;
+  let interactionCount = 0;
+  let firstImportedId = null;
+
+  importedAgents.forEach((importedAgent) => {
+    const key = agentMergeKey(importedAgent);
+    const existingAgent = existingByKey.get(key);
+
+    if (existingAgent) {
+      existingAgent.agency = importedAgent.agency || existingAgent.agency || "";
+      existingAgent.phone = importedAgent.phone || existingAgent.phone || "";
+      existingAgent.email = importedAgent.email || existingAgent.email || "";
+      existingAgent.telegram = importedAgent.telegram || existingAgent.telegram || "";
+      existingAgent.website = importedAgent.website || existingAgent.website || "";
+      existingAgent.social = importedAgent.social || existingAgent.social || "";
+      existingAgent.grade = normalizeAgentGrade(importedAgent.grade || existingAgent.grade);
+      existingAgent.isDraft = false;
+      existingAgent.updatedAt = nowIso();
+      existingAgent.interactions = existingAgent.interactions || [];
+      const existingInteractionKeys = new Set(
+        existingAgent.interactions.map((interaction) => `${interaction.createdAt}|${interaction.note}`),
+      );
+      const newInteractions = importedAgent.interactions.filter(
+        (interaction) => !existingInteractionKeys.has(`${interaction.createdAt}|${interaction.note}`),
+      );
+      existingAgent.interactions.unshift(...newInteractions);
+      existingAgent.interactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      updatedCount += 1;
+      interactionCount += newInteractions.length;
+      firstImportedId = firstImportedId || existingAgent.id;
+      return;
+    }
+
+    state.agents.unshift(importedAgent);
+    existingByKey.set(key, importedAgent);
+    addedCount += 1;
+    interactionCount += importedAgent.interactions.length;
+    firstImportedId = firstImportedId || importedAgent.id;
+  });
+
+  return { addedCount, updatedCount, interactionCount, firstImportedId };
+}
+
+function importCsvFile(file) {
+  if (!file) {
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.addEventListener("load", async () => {
+    try {
+      const rows = parseCsv(String(reader.result || ""));
+      const importedProspects = prospectsFromCsvRows(rows);
+
+      if (importedProspects.length === 0) {
+        setImportNotice("No complete prospects found. CSV rows need Name and Trade.");
+        return;
+      }
+
+      const result = mergeImportedProspects(importedProspects);
+      state.selectedId = result.firstImportedId || state.prospects[0]?.id || null;
+      await saveProspects();
+      render();
+      setImportNotice(
+        `Imported ${result.addedCount} new, updated ${result.updatedCount}, added ${result.interactionCount} interactions.`,
+      );
+    } catch {
+      setImportNotice("That CSV could not be imported.");
+    } finally {
+      elements.csvFileInput.value = "";
+    }
+  });
+
+  reader.addEventListener("error", () => {
+    setImportNotice("That CSV could not be read.");
+    elements.csvFileInput.value = "";
+  });
+
+  reader.readAsText(file);
+}
+
+function importUnitsCsvFile(file) {
+  if (!file) {
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.addEventListener("load", async () => {
+    try {
+      const rows = parseCsv(String(reader.result || ""));
+      const importedUnits = unitsFromCsvRows(rows);
+
+      if (importedUnits.length === 0) {
+        setUnitImportNotice("No units found. CSV rows need at least Unit Number.");
+        return;
+      }
+
+      const result = mergeImportedUnits(importedUnits);
+      state.selectedUnitId = result.firstImportedId || state.units[0]?.id || null;
+      state.activeTab = "units";
+      await saveUnits();
+      render();
+      setUnitImportNotice(`Imported ${result.addedCount} new units and updated ${result.updatedCount}.`);
+    } catch {
+      setUnitImportNotice("That unit CSV could not be imported.");
+    } finally {
+      elements.unitCsvFileInput.value = "";
+    }
+  });
+
+  reader.addEventListener("error", () => {
+    setUnitImportNotice("That unit CSV could not be read.");
+    elements.unitCsvFileInput.value = "";
+  });
+
+  reader.readAsText(file);
+}
+
+function importAgentsCsvFile(file) {
+  if (!file) {
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.addEventListener("load", async () => {
+    try {
+      const rows = parseCsv(String(reader.result || ""));
+      const importedAgents = agentsFromCsvRows(rows);
+
+      if (importedAgents.length === 0) {
+        setAgentImportNotice("No agents found. CSV rows need at least Agent Name.");
+        return;
+      }
+
+      const result = mergeImportedAgents(importedAgents);
+      state.selectedAgentId = result.firstImportedId || state.agents[0]?.id || null;
+      state.activeTab = "agents";
+      await saveAgents();
+      render();
+      setAgentImportNotice(
+        `Imported ${result.addedCount} new, updated ${result.updatedCount}, added ${result.interactionCount} notes.`,
+      );
+    } catch {
+      setAgentImportNotice("That agent CSV could not be imported.");
+    } finally {
+      elements.agentCsvFileInput.value = "";
+    }
+  });
+
+  reader.addEventListener("error", () => {
+    setAgentImportNotice("That agent CSV could not be read.");
+    elements.agentCsvFileInput.value = "";
+  });
+
+  reader.readAsText(file);
+}
+
+function downloadTextFile(filename, text, type) {
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function interactionEntriesForExport(record) {
+  const interactions = Array.isArray(record.interactions)
+    ? record.interactions.filter(Boolean)
+    : [];
+
+  if (interactions.length === 0) {
+    return [
+      {
+        interaction: { createdAt: "", note: "", attachment: null },
+        number: "",
+        total: "0",
+      },
+    ];
+  }
+
+  return interactions.map((interaction, index) => ({
+    interaction,
+    number: String(index + 1),
+    total: String(interactions.length),
+  }));
+}
+
+function exportCsv() {
+  const rows = [
+    [
+      "Name",
+      "Business Name",
+      "Agency",
+      "Agent",
+      "Building",
+      "Unit Number",
+      "Trade",
+      "Contact Number",
+      "Email Address",
+      "Telegram Handle",
+      "Website",
+      "Social Media",
+      "Status",
+      "Interaction Number",
+      "Interaction Total",
+      "Interaction Timestamp",
+      "Interaction Note",
+      "Attachment Name",
+      "Attachment Type",
+    ],
+  ];
+
+  state.prospects.forEach((prospect) => {
+    interactionEntriesForExport(prospect).forEach(({ interaction, number, total }) => {
+      rows.push([
+        prospect.name,
+        prospect.business,
+        prospect.agency,
+        prospect.agent,
+        prospect.building,
+        prospect.unit,
+        prospect.trade,
+        prospect.phone,
+        prospect.email,
+        prospect.telegram,
+        prospect.website,
+        prospect.social,
+        prospect.status,
+        number,
+        total,
+        formatDateTimeForCsv(interaction.createdAt),
+        interaction.note,
+        interaction.attachment?.name || "",
+        interaction.attachment?.type || "",
+      ]);
+    });
+  });
+
+  const csv = rows.map((row) => row.map(csvEscape).join(",")).join("\n");
+  downloadTextFile(
+    `tenant-prospects-${new Date().toISOString().slice(0, 10)}.csv`,
+    csv,
+    "text/csv;charset=utf-8",
+  );
+}
+
+function exportAgentsCsv() {
+  const rows = [
+    [
+      "Agent Name",
+      "Agency",
+      "Contact Number",
+      "Email Address",
+      "Telegram Handle",
+      "Website",
+      "Social Media",
+      "Grade",
+      "Interaction Timestamp",
+      "Interaction Note",
+    ],
+  ];
+
+  state.agents.forEach((agent) => {
+    const interactions = agent.interactions?.length
+      ? agent.interactions
+      : [{ createdAt: "", note: "" }];
+
+    interactions.forEach((interaction) => {
+      rows.push([
+        agent.name,
+        agent.agency,
+        agent.phone,
+        agent.email,
+        agent.telegram,
+        agent.website,
+        agent.social,
+        normalizeAgentGrade(agent.grade),
+        formatDateTimeForCsv(interaction.createdAt),
+        interaction.note,
+      ]);
+    });
+  });
+
+  const csv = rows.map((row) => row.map(csvEscape).join(",")).join("\n");
+  downloadTextFile(
+    `agents-${new Date().toISOString().slice(0, 10)}.csv`,
+    csv,
+    "text/csv;charset=utf-8",
+  );
+}
+
+elements.prospectsTabButton.addEventListener("click", () => setActiveTab("prospects"));
+elements.unitsTabButton.addEventListener("click", () => setActiveTab("units"));
+elements.agentsTabButton.addEventListener("click", () => setActiveTab("agents"));
+elements.adminTabButton.addEventListener("click", () => setActiveTab("admin"));
+elements.newProspectButton.addEventListener("click", createProspect);
+elements.emptyNewButton.addEventListener("click", createProspect);
+elements.newUnitButton.addEventListener("click", createUnit);
+elements.emptyNewUnitButton.addEventListener("click", createUnit);
+elements.newAgentButton.addEventListener("click", createAgent);
+elements.emptyNewAgentButton.addEventListener("click", createAgent);
+elements.importAgentsCsvButton.addEventListener("click", () => elements.agentCsvFileInput.click());
+elements.agentCsvFileInput.addEventListener("change", (event) => {
+  importAgentsCsvFile(event.target.files[0]);
+});
+elements.exportAgentsCsvButton.addEventListener("click", exportAgentsCsv);
+elements.importUnitsCsvButton.addEventListener("click", () => elements.unitCsvFileInput.click());
+elements.unitCsvFileInput.addEventListener("change", (event) => {
+  importUnitsCsvFile(event.target.files[0]);
+});
+elements.importCsvButton.addEventListener("click", () => elements.csvFileInput.click());
+elements.csvFileInput.addEventListener("change", (event) => {
+  importCsvFile(event.target.files[0]);
+});
+elements.exportCsvButton.addEventListener("click", exportCsv);
+elements.deleteProspectButton.addEventListener("click", () => {
+  deleteSelectedProspect();
+});
+elements.backToProspectListButton.addEventListener("click", () => {
+  scrollProspectListIntoView();
+});
+elements.deleteUnitButton.addEventListener("click", () => {
+  deleteSelectedUnit();
+});
+elements.deleteAgentButton.addEventListener("click", () => {
+  deleteSelectedAgent();
+});
+
+elements.authForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  handleLogin(new FormData(elements.authForm));
+});
+
+elements.signupButton.addEventListener("click", () => {
+  handleSignup();
+});
+
+elements.logoutButton.addEventListener("click", () => {
+  handleLogout();
+});
+
+elements.showAllProspectsButton.addEventListener("click", () => {
+  state.showAllProspects = !state.showAllProspects;
+  renderProspectList();
+});
+
+elements.showAllAgentsButton.addEventListener("click", () => {
+  state.showAllAgents = !state.showAllAgents;
+  renderAgentList();
+});
+
+elements.inviteUserForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  inviteUser(new FormData(elements.inviteUserForm));
+});
+
+elements.tradeCategoryForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  addTradeCategory(new FormData(elements.tradeCategoryForm));
+});
+
+elements.searchInput.addEventListener("input", (event) => {
+  state.searchTerm = event.target.value;
+  renderProspectList();
+});
+
+elements.unitSearchInput.addEventListener("input", (event) => {
+  state.unitSearchTerm = event.target.value;
+  renderUnitList();
+});
+
+elements.agentSearchInput.addEventListener("input", (event) => {
+  state.agentSearchTerm = event.target.value;
+  renderAgentList();
+});
+
+elements.contactDateInput.addEventListener("input", (event) => {
+  state.contactDate = parseDisplayDate(event.target.value);
+  renderProspectList();
+});
+
+elements.contactYearInput.addEventListener("input", (event) => {
+  state.contactYear = event.target.value.replace(/\D/g, "").slice(0, 4);
+  elements.contactYearInput.value = state.contactYear;
+  renderProspectList();
+});
+
+elements.tradeFilterInput.addEventListener("change", (event) => {
+  state.tradeFilter = event.target.value;
+  renderProspectList();
+});
+
+elements.statusFilterInput.addEventListener("change", (event) => {
+  state.statusFilter = event.target.value;
+  renderProspectList();
+});
+
+elements.clearFiltersButton.addEventListener("click", () => {
+  state.searchTerm = "";
+  state.contactDate = "";
+  state.contactYear = "";
+  state.tradeFilter = "";
+  state.statusFilter = "";
+  elements.searchInput.value = "";
+  elements.contactDateInput.value = "";
+  elements.contactYearInput.value = "";
+  elements.tradeFilterInput.value = "";
+  elements.statusFilterInput.value = "";
+  renderProspectList();
+});
+
+elements.prospectForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  updateSelectedProspect(new FormData(elements.prospectForm));
+});
+
+elements.unitForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  updateSelectedUnit(new FormData(elements.unitForm));
+});
+
+elements.agentForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  updateSelectedAgent(new FormData(elements.agentForm));
+});
+
+elements.interactionForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  addInteraction(elements.interactionInput.value, elements.interactionFileInput.files[0]);
+});
+
+elements.unitDocumentsForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  saveUnitDocuments();
+});
+
+elements.agentInteractionForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  addAgentInteraction(elements.agentInteractionInput.value);
+});
+
+initializeApp();

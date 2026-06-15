@@ -51,6 +51,7 @@ button {
 .app-shell {
   min-height: 100vh;
   padding: 24px;
+  overflow: visible;
 }
 
 .auth-screen {
@@ -102,7 +103,7 @@ button {
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .topbar {
@@ -268,6 +269,7 @@ button {
   flex: 1;
   display: grid;
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  overflow: visible;
 }
 
 .admin-panel {
@@ -279,6 +281,8 @@ button {
 
 .prospect-rail {
   min-width: 0;
+  min-height: 0;
+  overflow: visible;
   border-right: 1px solid var(--line);
   background:
     repeating-linear-gradient(-2deg, rgba(203, 22, 79, 0.025) 0 1px, transparent 1px 7px),
@@ -306,6 +310,17 @@ button {
   justify-self: end;
   min-width: 96px;
   min-height: 34px;
+}
+
+.list-toggle-button {
+  justify-self: end;
+  min-width: 118px;
+  min-height: 34px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 input,
@@ -403,9 +418,13 @@ button:focus-visible {
 }
 
 .prospect-list {
-  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  overflow: visible;
   padding: 8px;
   display: grid;
+  align-content: start;
+  grid-auto-rows: max-content;
   gap: 6px;
 }
 
@@ -485,7 +504,23 @@ button:focus-visible {
 
 .detail-pane {
   min-width: 0;
-  overflow: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+@media (min-width: 961px) {
+  .layout {
+    align-items: start;
+  }
+
+  .detail-pane {
+    position: sticky;
+    top: 24px;
+    max-height: calc(100vh - 48px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 .empty-state {
@@ -508,6 +543,10 @@ button:focus-visible {
   min-height: 100%;
   display: grid;
   grid-template-columns: minmax(320px, 44%) minmax(0, 1fr);
+}
+
+.mobile-back-button {
+  display: none;
 }
 
 .editor-panel,
@@ -706,6 +745,72 @@ label span {
   gap: 10px;
 }
 
+.admin-subsection {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.category-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.category-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px;
+}
+
+.category-card.inactive {
+  background: #fbf7f8;
+  color: var(--muted);
+}
+
+.category-card header,
+.category-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.category-card strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.category-pill {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.compact-inline-button {
+  width: auto;
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
 .user-card {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -742,6 +847,11 @@ label span {
   font-weight: 800;
 }
 
+.status-pill.inactive {
+  background: #efe6ea;
+  color: var(--muted);
+}
+
 .user-controls {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
@@ -768,28 +878,53 @@ label span {
   border: 0;
 }
 
-@media (max-width: 960px) {
-  .layout,
+@media (max-width: 1100px) {
   .detail-content,
   .admin-panel {
     grid-template-columns: 1fr;
   }
 
-  .prospect-rail,
   .editor-panel {
     border-right: 0;
   }
 
-  .prospect-rail {
-    border-bottom: 1px solid var(--line);
-  }
-
-  .prospect-list {
-    max-height: 280px;
-  }
-
   .editor-panel {
     border-bottom: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 960px) {
+  .app-shell {
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .workspace {
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .layout,
+  .admin-panel {
+    height: auto;
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .prospect-rail {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .detail-pane {
+    overflow: visible;
+  }
+
+  .mobile-back-button {
+    display: block;
+    width: auto;
+    justify-self: start;
+    margin: 18px 18px 0;
   }
 
 }
@@ -850,6 +985,15 @@ label span {
   .danger-button {
     flex: 1;
     width: 100%;
+  }
+
+  .mobile-back-button {
+    width: auto;
+  }
+
+  .compact-inline-button {
+    flex: 0 0 auto;
+    width: auto;
   }
 
   .form-actions {

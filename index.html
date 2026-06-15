@@ -8,7 +8,7 @@
   </head>
   <body>
     <section class="auth-screen" id="authScreen">
-      <form class="auth-card" id="authForm" method="post" onsubmit="return false">
+      <form class="auth-card" id="authForm">
         <p class="eyebrow">Secure access</p>
         <h1>Tenant Prospect CRM</h1>
         <p class="auth-copy">Sign in with your approved account. The first account created becomes the admin.</p>
@@ -68,10 +68,11 @@
         </header>
 
         <div class="layout tab-panel" id="prospectsTabPanel" role="tabpanel" aria-labelledby="prospectsTabButton">
-          <aside class="prospect-rail" aria-label="Prospect list">
+          <aside class="prospect-rail" id="prospectRail" aria-label="Prospect list">
             <div class="search-row">
               <label class="sr-only" for="searchInput">Search prospects</label>
               <input id="searchInput" type="search" placeholder="Search all prospects" autocomplete="off" />
+              <button class="secondary-button list-toggle-button" id="showAllProspectsButton" type="button" aria-pressed="false">Show All</button>
               <div class="filter-grid" aria-label="Prospect filters">
                 <label>
                   <span>Contacted on</span>
@@ -85,6 +86,12 @@
                   <span>Trade</span>
                   <select id="tradeFilterInput">
                     <option value="">All trades</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Status</span>
+                  <select id="statusFilterInput">
+                    <option value="">All statuses</option>
                   </select>
                 </label>
                 <button class="secondary-button compact-button" id="clearFiltersButton" type="button">Clear</button>
@@ -105,7 +112,7 @@
             <div class="prospect-list" id="prospectList" role="list"></div>
           </aside>
 
-          <section class="detail-pane" aria-live="polite">
+          <section class="detail-pane" id="prospectDetailPane" aria-live="polite">
             <div class="empty-state" id="emptyState">
               <h2>Start with a prospect</h2>
               <p>Add a tenant prospect, then log calls, viewings, follow-ups, and notes with automatic timestamps.</p>
@@ -113,6 +120,7 @@
             </div>
 
             <div class="detail-content hidden" id="detailContent">
+              <button class="secondary-button mobile-back-button" id="backToProspectListButton" type="button">Back to List</button>
               <section class="editor-panel" aria-label="Prospect details">
                 <form id="prospectForm">
                   <div class="form-heading">
@@ -133,8 +141,8 @@
                       <input id="businessInput" name="business" type="text" autocomplete="organization" />
                     </label>
                     <label>
-                      <span>Contact number <abbr class="required-marker" title="Required" aria-label="required">*</abbr></span>
-                      <input id="phoneInput" name="phone" type="tel" autocomplete="tel" required />
+                      <span>Contact number</span>
+                      <input id="phoneInput" name="phone" type="tel" autocomplete="tel" />
                     </label>
                     <label>
                       <span>Email address</span>
@@ -154,7 +162,12 @@
                     </label>
                     <label>
                       <span>Building</span>
-                      <input id="buildingInput" name="building" type="text" autocomplete="off" />
+                      <select id="buildingInput" name="building">
+                        <option value="">Select building</option>
+                        <option>myVillage</option>
+                        <option>17 HKG ST</option>
+                        <option>Craig Place</option>
+                      </select>
                     </label>
                     <label>
                       <span>Unit number</span>
@@ -181,7 +194,9 @@
                     </label>
                     <label>
                       <span>Trade <abbr class="required-marker" title="Required" aria-label="required">*</abbr></span>
-                      <input id="tradeInput" name="trade" type="text" placeholder="Cafe, salon, office, etc." autocomplete="off" required />
+                      <select id="tradeInput" name="trade" required>
+                        <option value="">Select trade</option>
+                      </select>
                     </label>
                   </div>
 
@@ -332,6 +347,7 @@
             <div class="search-row">
               <label class="sr-only" for="agentSearchInput">Search agents</label>
               <input id="agentSearchInput" type="search" placeholder="Search agents" autocomplete="off" />
+              <button class="secondary-button list-toggle-button" id="showAllAgentsButton" type="button" aria-pressed="false">Show All</button>
             </div>
 
             <div class="stats-row" aria-label="Agent totals">
@@ -467,6 +483,31 @@
                 <button class="primary-button" type="submit">Invite User</button>
               </div>
             </form>
+
+            <section class="admin-subsection" aria-label="Trade category management">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Categories</p>
+                  <h2>Trade Categories</h2>
+                </div>
+              </div>
+
+              <form id="tradeCategoryForm">
+                <div class="field-grid">
+                  <label>
+                    <span>New trade category</span>
+                    <input id="tradeCategoryInput" name="tradeCategory" type="text" autocomplete="off" />
+                  </label>
+                </div>
+
+                <div class="form-actions">
+                  <p id="tradeCategoryNotice" class="saved-notice" aria-live="polite"></p>
+                  <button class="primary-button" type="submit">Add Category</button>
+                </div>
+              </form>
+
+              <div class="category-list" id="tradeCategoryList" aria-label="Current trade categories"></div>
+            </section>
           </section>
 
           <section class="interaction-panel" aria-label="Current users">
@@ -543,41 +584,6 @@
     </template>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
-    <script>
-      (function () {
-        if ("DecompressionStream" in globalThis || !globalThis.TransformStream || !globalThis.pako) {
-          return;
-        }
-
-        globalThis.DecompressionStream = function (format) {
-          if (format !== "gzip") {
-            throw new TypeError("Only gzip decompression is supported.");
-          }
-
-          var chunks = [];
-          return new TransformStream({
-            transform: function (chunk) {
-              chunks.push(chunk);
-            },
-            flush: function (controller) {
-              var length = chunks.reduce(function (total, chunk) {
-                return total + chunk.length;
-              }, 0);
-              var input = new Uint8Array(length);
-              var offset = 0;
-
-              chunks.forEach(function (chunk) {
-                input.set(chunk, offset);
-                offset += chunk.length;
-              });
-
-              controller.enqueue(globalThis.pako.ungzip(input));
-            },
-          });
-        };
-      })();
-    </script>
     <script src="app.js" defer></script>
   </body>
 </html>
