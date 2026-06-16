@@ -204,6 +204,8 @@ function normalizeTradeCategoryRecord(category) {
     id: source.id || null,
     name,
     isActive: source.is_active ?? source.isActive ?? true,
+    createdBy: source.created_by || source.createdBy || "",
+    createdAt: source.created_at || source.createdAt || "",
   };
 }
 
@@ -347,7 +349,7 @@ async function loadAgents() {
 async function loadTradeCategories() {
   const { data, error } = await cloudClient
     .from("trade_categories")
-    .select("id, name, is_active")
+    .select("id, name, is_active, created_by, created_at")
     .order("is_active", { ascending: false })
     .order("name", { ascending: true });
 
@@ -359,6 +361,8 @@ async function loadTradeCategories() {
     id: category.id,
     name: category.name,
     isActive: category.is_active,
+    createdBy: category.created_by || "",
+    createdAt: category.created_at || "",
   }));
   state.tradeCategories = cloudCategories.length
     ? mergeTradeCategories(cloudCategories)
@@ -541,6 +545,7 @@ async function mapProspectInteractionFromDb(row) {
   return {
     id: row.id,
     note: row.note || "",
+    createdBy: row.created_by || "",
     createdAt: row.created_at,
     attachment,
   };
@@ -600,6 +605,8 @@ async function mapUnitDocumentFromDb(row) {
     name: row.name || "File",
     type: row.type || "application/octet-stream",
     size: row.size || 0,
+    createdBy: row.created_by || "",
+    createdAt: row.created_at,
     url: await createSignedUrl(row.storage_path),
   };
 }
@@ -646,6 +653,7 @@ function mapAgentInteractionFromDb(row) {
   return {
     id: row.id,
     note: row.note || "",
+    createdBy: row.created_by || "",
     createdAt: row.created_at,
   };
 }
@@ -713,7 +721,7 @@ async function syncProspectsToCloud() {
         attachment_name: interaction.attachment?.name || null,
         attachment_type: interaction.attachment?.type || null,
         attachment_size: interaction.attachment?.size || null,
-        created_by: state.currentUser?.id || null,
+        created_by: interaction.createdBy || state.currentUser?.id || null,
         created_at: interaction.createdAt || nowIso(),
       }, { onConflict: "id" });
 
@@ -739,7 +747,7 @@ async function syncAgentsToCloud() {
         id: interaction.id,
         agent_id: agent.id,
         note: interaction.note || "",
-        created_by: state.currentUser?.id || null,
+        created_by: interaction.createdBy || state.currentUser?.id || null,
         created_at: interaction.createdAt || nowIso(),
       }, { onConflict: "id" });
 
@@ -770,6 +778,99 @@ function formatDateTime(isoDate) {
 
 function formatDateTimeForCsv(isoDate) {
   return isoDate ? formatDateTime(isoDate) : "";
+}
+
+function currentUserId() {
+  return state.currentUser?.id || "";
+}
+
+function knownUserForId(userId) {
+  if (!userId) {
+    return null;
+  }
+
+  if (state.currentProfile?.id === userId) {
+    return state.currentProfile;
+  }
+
+  return state.users.find((user) => user.id === userId) || null;
+}
+
+function userDisplayName(userId, { forExport = false } = {}) {
+  if (!userId) {
+    return "Unknown user";
+  }
+
+  const user = knownUserForId(userId);
+
+  if (user) {
+    return user.full_name || user.email || `User ${String(userId).slice(0, 8)}`;
+  }
+
+  if (userId === currentUserId()) {
+    return forExport
+      ? state.currentProfile?.email || state.currentUser?.email || "You"
+      : "You";
+  }
+
+  return `User ${String(userId).slice(0, 8)}`;
+}
+
+function attributionLine(label, userId, isoDate) {
+  const user = userDisplayName(userId);
+  const date = formatDateTimeForCsv(isoDate);
+
+  if (!userId && !date) {
+    return "";
+  }
+
+  return `${label} by ${user}${date ? ` · ${date}` : ""}`;
+}
+
+function createAttributionElement(lines, className = "attribution-meta") {
+  const cleanLines = lines.filter(Boolean);
+
+  if (cleanLines.length === 0) {
+    return null;
+  }
+
+  const container = document.createElement("div");
+  container.className = className;
+
+  cleanLines.forEach((line) => {
+    const item = document.createElement("small");
+    item.textContent = line;
+    container.append(item);
+  });
+
+  return container;
+}
+
+function recordAttributionLines(record) {
+  if (!record) {
+    return [];
+  }
+
+  return [
+    attributionLine("Created", record.createdBy, record.createdAt),
+    attributionLine("Updated", record.updatedBy, record.updatedAt),
+  ];
+}
+
+function renderRecordAttribution(form, record) {
+  form.querySelector(".record-attribution")?.remove();
+
+  const attribution = createAttributionElement(recordAttributionLines(record), "record-attribution");
+
+  if (!attribution) {
+    return;
+  }
+
+  form.querySelector(".form-heading")?.after(attribution);
+}
+
+function exportUserName(userId) {
+  return userDisplayName(userId, { forExport: true });
 }
 
 function formatDateForInput(isoDate) {
@@ -1040,6 +1141,7 @@ function prospectSearchText(prospect) {
       formatDateForInput(interaction.createdAt),
       formatYear(interaction.createdAt),
       formatDateTime(interaction.createdAt),
+      interaction.createdBy ? exportUserName(interaction.createdBy) : "",
     ])
     .join(" ");
 
@@ -1057,6 +1159,8 @@ function prospectSearchText(prospect) {
     prospect.website,
     prospect.social,
     normalizeStatus(prospect.status),
+    prospect.createdBy ? exportUserName(prospect.createdBy) : "",
+    prospect.updatedBy ? exportUserName(prospect.updatedBy) : "",
     interactionText,
   ]
     .join(" ")
@@ -1104,8 +1208,11 @@ function unitSearchText(unit) {
   const documents = unit.documents || createEmptyUnitDocuments();
   const documentText = [
     documents.floorPlan?.name,
+    documents.floorPlan?.createdBy ? exportUserName(documents.floorPlan.createdBy) : "",
     documents.me?.name,
+    documents.me?.createdBy ? exportUserName(documents.me.createdBy) : "",
     ...(documents.photos || []).map((photo) => photo.name),
+    ...(documents.photos || []).map((photo) => photo.createdBy ? exportUserName(photo.createdBy) : ""),
   ].join(" ");
 
   return [
@@ -1115,6 +1222,8 @@ function unitSearchText(unit) {
     unit.availableDate,
     unit.currentPrice,
     unit.marketPrice,
+    unit.createdBy ? exportUserName(unit.createdBy) : "",
+    unit.updatedBy ? exportUserName(unit.updatedBy) : "",
     documentText,
   ]
     .join(" ")
@@ -1135,6 +1244,7 @@ function agentSearchText(agent) {
       interaction.note,
       interaction.createdAt,
       formatDateTime(interaction.createdAt),
+      interaction.createdBy ? exportUserName(interaction.createdBy) : "",
     ])
     .join(" ");
 
@@ -1147,6 +1257,8 @@ function agentSearchText(agent) {
     agent.website,
     agent.social,
     normalizeAgentGrade(agent.grade),
+    agent.createdBy ? exportUserName(agent.createdBy) : "",
+    agent.updatedBy ? exportUserName(agent.updatedBy) : "",
     interactionText,
   ]
     .join(" ")
@@ -1414,6 +1526,8 @@ function createProspect() {
     social: "",
     status: "New",
     isDraft: true,
+    createdBy: currentUserId(),
+    updatedBy: currentUserId(),
     createdAt: nowIso(),
     updatedAt: nowIso(),
     interactions: [],
@@ -1437,6 +1551,8 @@ function createUnit() {
     currentPrice: "",
     marketPrice: "",
     isDraft: true,
+    createdBy: currentUserId(),
+    updatedBy: currentUserId(),
     createdAt: nowIso(),
     updatedAt: nowIso(),
     documents: createEmptyUnitDocuments(),
@@ -1462,6 +1578,8 @@ function createAgent() {
     social: "",
     grade: "B",
     isDraft: true,
+    createdBy: currentUserId(),
+    updatedBy: currentUserId(),
     createdAt: nowIso(),
     updatedAt: nowIso(),
     interactions: [],
@@ -1588,6 +1706,7 @@ async function updateSelectedProspect(formData) {
   prospect.social = formData.get("social").toString().trim();
   prospect.status = normalizeStatus(formData.get("status"));
   prospect.isDraft = false;
+  prospect.updatedBy = currentUserId();
   prospect.updatedAt = nowIso();
   try {
     await upsertProspectToCloud(prospect);
@@ -1615,6 +1734,7 @@ async function updateSelectedUnit(formData) {
   unit.currentPrice = formData.get("currentPrice").toString().trim();
   unit.marketPrice = formData.get("marketPrice").toString().trim();
   unit.isDraft = false;
+  unit.updatedBy = currentUserId();
   unit.updatedAt = nowIso();
   unit.documents = unit.documents || createEmptyUnitDocuments();
   try {
@@ -1645,6 +1765,7 @@ async function updateSelectedAgent(formData) {
   agent.social = formData.get("social").toString().trim();
   agent.grade = normalizeAgentGrade(formData.get("grade"));
   agent.isDraft = false;
+  agent.updatedBy = currentUserId();
   agent.updatedAt = nowIso();
   agent.interactions = agent.interactions || [];
   try {
@@ -1708,6 +1829,7 @@ async function addInteraction(note, file) {
 
     prospect.interactions = prospect.interactions || [];
     prospect.interactions.unshift(await mapProspectInteractionFromDb(data));
+    prospect.updatedBy = currentUserId();
     prospect.updatedAt = nowIso();
     await upsertProspectToCloud(prospect);
   } catch (error) {
@@ -1774,6 +1896,7 @@ async function saveUnitDocuments() {
     }
 
     unit.documents = documents;
+    unit.updatedBy = currentUserId();
     unit.updatedAt = nowIso();
     await upsertUnitToCloud(unit);
   } catch (error) {
@@ -1828,6 +1951,7 @@ async function addAgentInteraction(note) {
 
   agent.interactions = agent.interactions || [];
   agent.interactions.unshift(mapAgentInteractionFromDb(data));
+  agent.updatedBy = currentUserId();
   agent.updatedAt = nowIso();
   await upsertAgentToCloud(agent);
   elements.agentInteractionInput.value = "";
@@ -1856,6 +1980,7 @@ async function deleteAgentInteraction(interactionId) {
   }
 
   agent.interactions = (agent.interactions || []).filter((interaction) => interaction.id !== interactionId);
+  agent.updatedBy = currentUserId();
   agent.updatedAt = nowIso();
   await upsertAgentToCloud(agent);
   render();
@@ -1912,6 +2037,7 @@ async function deleteUnitDocument(type, documentId) {
   }
 
   unit.updatedAt = nowIso();
+  unit.updatedBy = currentUserId();
   await upsertUnitToCloud(unit);
   render();
 }
@@ -1942,6 +2068,7 @@ async function deleteInteraction(interactionId) {
 
   await deleteCloudFile(interaction?.attachment?.path);
   prospect.interactions = prospect.interactions.filter((item) => item.id !== interactionId);
+  prospect.updatedBy = currentUserId();
   prospect.updatedAt = nowIso();
   await upsertProspectToCloud(prospect);
   render();
@@ -2140,6 +2267,7 @@ function renderUnitForm(unit) {
   elements.unitCurrentPriceInput.value = unit.currentPrice || "";
   elements.unitMarketPriceInput.value = unit.marketPrice || "";
   elements.saveUnitButton.textContent = unit.isDraft ? "Save Unit" : "Update Unit";
+  renderRecordAttribution(elements.unitForm, unit);
 }
 
 function createDocumentCard(title, attachment, deleteType) {
@@ -2180,6 +2308,14 @@ function createDocumentCard(title, attachment, deleteType) {
   link.rel = "noopener";
   link.textContent = `${attachment.name || title} (${formatFileSize(attachment.size)})`;
   card.append(link);
+
+  const attribution = createAttributionElement([
+    attributionLine("Uploaded", attachment?.createdBy, attachment?.createdAt),
+  ], "entry-attribution");
+
+  if (attribution) {
+    card.append(attribution);
+  }
 
   return card;
 }
@@ -2308,6 +2444,7 @@ function renderAgentForm(agent) {
   elements.agentSocialInput.value = agent.social || "";
   elements.agentGradeInput.value = normalizeAgentGrade(agent.grade);
   elements.saveAgentButton.textContent = agent.isDraft ? "Save Agent" : "Update Agent";
+  renderRecordAttribution(elements.agentForm, agent);
 }
 
 function renderAgentTimeline(agent) {
@@ -2331,6 +2468,12 @@ function renderAgentTimeline(agent) {
     const item = elements.agentTimelineItemTemplate.content.firstElementChild.cloneNode(true);
     item.querySelector('[data-field="createdAt"]').textContent = formatDateTime(interaction.createdAt);
     item.querySelector('[data-field="note"]').textContent = interaction.note;
+    const attribution = createAttributionElement([
+      attributionLine("Added", interaction.createdBy, interaction.createdAt),
+    ], "entry-attribution");
+    if (attribution) {
+      item.querySelector('[data-field="note"]').after(attribution);
+    }
     item.querySelector('[data-action="delete-agent-interaction"]').addEventListener("click", () => {
       deleteAgentInteraction(interaction.id);
     });
@@ -2375,6 +2518,7 @@ function renderForm(prospect) {
   elements.socialInput.value = prospect.social || "";
   elements.statusInput.value = normalizeStatus(prospect.status);
   elements.saveProspectButton.textContent = prospect.isDraft ? "Save Prospect" : "Update Prospect";
+  renderRecordAttribution(elements.prospectForm, prospect);
 }
 
 function renderTimeline(prospect) {
@@ -2399,6 +2543,12 @@ function renderTimeline(prospect) {
     const attachmentLink = item.querySelector('[data-field="attachment"]');
     item.querySelector('[data-field="createdAt"]').textContent = formatDateTime(interaction.createdAt);
     item.querySelector('[data-field="note"]').textContent = interaction.note;
+    const attribution = createAttributionElement([
+      attributionLine("Added", interaction.createdBy, interaction.createdAt),
+    ], "entry-attribution");
+    if (attribution) {
+      item.querySelector('[data-field="note"]').after(attribution);
+    }
     if (fileHref(interaction.attachment)) {
       attachmentLink.classList.remove("hidden");
       attachmentLink.href = fileHref(interaction.attachment);
@@ -2488,6 +2638,10 @@ function renderTradeCategoryList() {
     status.textContent = category.isActive ? "Active" : "Inactive";
     header.append(name, status);
 
+    const attribution = createAttributionElement([
+      attributionLine("Added", category.createdBy, category.createdAt),
+    ], "entry-attribution");
+
     const actions = document.createElement("div");
     actions.className = "category-actions";
 
@@ -2510,7 +2664,11 @@ function renderTradeCategoryList() {
     });
 
     actions.append(toggleButton, deleteButton);
-    item.append(header, actions);
+    item.append(header);
+    if (attribution) {
+      item.append(attribution);
+    }
+    item.append(actions);
     elements.tradeCategoryList.append(item);
   });
 }
@@ -2873,7 +3031,7 @@ async function addTradeCategory(formData) {
         is_active: true,
         created_by: state.currentUser?.id || null,
       })
-      .select("id, name, is_active")
+      .select("id, name, is_active, created_by, created_at")
       .single();
 
     if (error) {
@@ -2881,10 +3039,12 @@ async function addTradeCategory(formData) {
     }
 
     state.tradeCategories = mergeTradeCategories(state.tradeCategories, [{
-      id: data.id,
-      name: data.name || category,
-      isActive: data.is_active,
-    }]);
+        id: data.id,
+        name: data.name || category,
+        isActive: data.is_active,
+        createdBy: data.created_by || currentUserId(),
+        createdAt: data.created_at || nowIso(),
+      }]);
     elements.tradeCategoryForm.reset();
     refreshTradeCategoryUi();
     setTradeCategoryNotice("Trade category added.");
@@ -2926,6 +3086,8 @@ async function updateTradeCategoryStatus(categoryId, isActive) {
         id: data.id,
         name: data.name,
         isActive: data.is_active,
+        createdBy: state.tradeCategories.find((category) => category.id === categoryId)?.createdBy || "",
+        createdAt: state.tradeCategories.find((category) => category.id === categoryId)?.createdAt || "",
       }],
     );
     refreshTradeCategoryUi();
@@ -3140,6 +3302,7 @@ function mergeImportedProspects(importedProspects) {
       existingProspect.website = importedProspect.website || existingProspect.website || "";
       existingProspect.social = importedProspect.social || existingProspect.social || "";
       existingProspect.status = normalizeStatus(importedProspect.status || existingProspect.status);
+      existingProspect.updatedBy = currentUserId();
       existingProspect.updatedAt = nowIso();
       existingProspect.interactions = existingProspect.interactions || [];
       const existingInteractionKeys = new Set(
@@ -3245,6 +3408,8 @@ function prospectsFromCsvRows(rows) {
         social,
         status,
         isDraft: false,
+        createdBy: currentUserId(),
+        updatedBy: currentUserId(),
         createdAt: nowIso(),
         updatedAt: nowIso(),
         interactions: [],
@@ -3267,6 +3432,7 @@ function prospectsFromCsvRows(rows) {
       prospect.interactions.push({
         id: createId(),
         note,
+        createdBy: currentUserId(),
         createdAt: parseImportedDate(cell(row, columns.interactionTimestamp)),
         attachment: null,
       });
@@ -3314,6 +3480,8 @@ function unitsFromCsvRows(rows) {
         currentPrice: "",
         marketPrice: "",
         isDraft: false,
+        createdBy: currentUserId(),
+        updatedBy: currentUserId(),
         createdAt: nowIso(),
         updatedAt: nowIso(),
         documents: createEmptyUnitDocuments(),
@@ -3352,6 +3520,7 @@ function mergeImportedUnits(importedUnits) {
       existingUnit.marketPrice = importedUnit.marketPrice || existingUnit.marketPrice || "";
       existingUnit.documents = existingUnit.documents || createEmptyUnitDocuments();
       existingUnit.isDraft = false;
+      existingUnit.updatedBy = currentUserId();
       existingUnit.updatedAt = nowIso();
       updatedCount += 1;
       firstImportedId = firstImportedId || existingUnit.id;
@@ -3417,6 +3586,8 @@ function agentsFromCsvRows(rows) {
         social,
         grade,
         isDraft: false,
+        createdBy: currentUserId(),
+        updatedBy: currentUserId(),
         createdAt: nowIso(),
         updatedAt: nowIso(),
         interactions: [],
@@ -3436,6 +3607,7 @@ function agentsFromCsvRows(rows) {
       agent.interactions.push({
         id: createId(),
         note,
+        createdBy: currentUserId(),
         createdAt: parseImportedDate(cell(row, columns.interactionTimestamp)),
       });
     }
@@ -3470,6 +3642,7 @@ function mergeImportedAgents(importedAgents) {
       existingAgent.social = importedAgent.social || existingAgent.social || "";
       existingAgent.grade = normalizeAgentGrade(importedAgent.grade || existingAgent.grade);
       existingAgent.isDraft = false;
+      existingAgent.updatedBy = currentUserId();
       existingAgent.updatedAt = nowIso();
       existingAgent.interactions = existingAgent.interactions || [];
       const existingInteractionKeys = new Set(
@@ -3663,9 +3836,14 @@ function exportCsv() {
       "Website",
       "Social Media",
       "Status",
+      "Created By",
+      "Created Timestamp",
+      "Updated By",
+      "Updated Timestamp",
       "Interaction Number",
       "Interaction Total",
       "Interaction Timestamp",
+      "Interaction Created By",
       "Interaction Note",
       "Attachment Name",
       "Attachment Type",
@@ -3688,9 +3866,14 @@ function exportCsv() {
         prospect.website,
         prospect.social,
         prospect.status,
+        exportUserName(prospect.createdBy),
+        formatDateTimeForCsv(prospect.createdAt),
+        exportUserName(prospect.updatedBy),
+        formatDateTimeForCsv(prospect.updatedAt),
         number,
         total,
         formatDateTimeForCsv(interaction.createdAt),
+        interaction.createdBy ? exportUserName(interaction.createdBy) : "",
         interaction.note,
         interaction.attachment?.name || "",
         interaction.attachment?.type || "",
@@ -3717,7 +3900,12 @@ function exportAgentsCsv() {
       "Website",
       "Social Media",
       "Grade",
+      "Created By",
+      "Created Timestamp",
+      "Updated By",
+      "Updated Timestamp",
       "Interaction Timestamp",
+      "Interaction Created By",
       "Interaction Note",
     ],
   ];
@@ -3737,7 +3925,12 @@ function exportAgentsCsv() {
         agent.website,
         agent.social,
         normalizeAgentGrade(agent.grade),
+        exportUserName(agent.createdBy),
+        formatDateTimeForCsv(agent.createdAt),
+        exportUserName(agent.updatedBy),
+        formatDateTimeForCsv(agent.updatedAt),
         formatDateTimeForCsv(interaction.createdAt),
+        interaction.createdBy ? exportUserName(interaction.createdBy) : "",
         interaction.note,
       ]);
     });

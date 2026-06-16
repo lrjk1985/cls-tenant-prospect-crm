@@ -582,6 +582,25 @@ button:focus-visible {
   margin-bottom: 16px;
 }
 
+.record-attribution {
+  display: grid;
+  gap: 3px;
+  margin: -8px 0 14px;
+}
+
+.record-attribution small,
+.entry-attribution small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.entry-attribution {
+  display: grid;
+  gap: 3px;
+  margin-top: 8px;
+}
+
 .editor-panel .field-grid {
   gap: 9px;
 }
