@@ -1363,12 +1363,18 @@ function markNoticeUpdated(element) {
   element.classList.add("notice-updated");
 }
 
+function isLoadingMessage(message) {
+  return /^(loading|saving|signing|creating|sending|updating|adding|importing|deleting|reactivating|deactivating)/i
+    .test(String(message || "").trim());
+}
+
 function setNoticeText(element, message) {
   if (!element) {
     return;
   }
 
   element.textContent = message;
+  element.classList.toggle("is-loading-message", isLoadingMessage(message));
   markNoticeUpdated(element);
 }
 
@@ -2863,6 +2869,7 @@ function render() {
 function showSignedOut(message = "") {
   elements.authScreen.classList.remove("hidden");
   elements.appShell.classList.add("hidden");
+  elements.appShell.classList.remove("is-loading-app");
   setNoticeText(elements.authNotice, message);
 }
 
@@ -2943,6 +2950,7 @@ async function loadCloudSection(loadingKey, loader, onError) {
 
 async function refreshAppData() {
   try {
+    elements.appShell.classList.add("is-loading-app");
     await loadCurrentProfile();
 
     if (!state.currentProfile.active) {
@@ -2966,8 +2974,11 @@ async function refreshAppData() {
     state.isLoadingUsers = state.currentProfile?.role === "admin";
     showSignedIn();
     render();
-    void loadAllCloudData();
+    void loadAllCloudData().finally(() => {
+      elements.appShell.classList.remove("is-loading-app");
+    });
   } catch (error) {
+    elements.appShell.classList.remove("is-loading-app");
     showSignedOut(error.message || "Could not load the CRM.");
   }
 }
@@ -3790,6 +3801,8 @@ function importCsvFile(file) {
   }
 
   const reader = new FileReader();
+  setButtonBusy(elements.importCsvButton, true, "Importing...");
+  setImportNotice("Importing CSV");
 
   reader.addEventListener("load", async () => {
     try {
@@ -3811,11 +3824,13 @@ function importCsvFile(file) {
     } catch {
       setImportNotice("That CSV could not be imported.");
     } finally {
+      setButtonBusy(elements.importCsvButton, false);
       elements.csvFileInput.value = "";
     }
   });
 
   reader.addEventListener("error", () => {
+    setButtonBusy(elements.importCsvButton, false);
     setImportNotice("That CSV could not be read.");
     elements.csvFileInput.value = "";
   });
@@ -3829,6 +3844,8 @@ function importUnitsCsvFile(file) {
   }
 
   const reader = new FileReader();
+  setButtonBusy(elements.importUnitsCsvButton, true, "Importing...");
+  setUnitImportNotice("Importing unit CSV");
 
   reader.addEventListener("load", async () => {
     try {
@@ -3849,11 +3866,13 @@ function importUnitsCsvFile(file) {
     } catch {
       setUnitImportNotice("That unit CSV could not be imported.");
     } finally {
+      setButtonBusy(elements.importUnitsCsvButton, false);
       elements.unitCsvFileInput.value = "";
     }
   });
 
   reader.addEventListener("error", () => {
+    setButtonBusy(elements.importUnitsCsvButton, false);
     setUnitImportNotice("That unit CSV could not be read.");
     elements.unitCsvFileInput.value = "";
   });
@@ -3867,6 +3886,8 @@ function importAgentsCsvFile(file) {
   }
 
   const reader = new FileReader();
+  setButtonBusy(elements.importAgentsCsvButton, true, "Importing...");
+  setAgentImportNotice("Importing agent CSV");
 
   reader.addEventListener("load", async () => {
     try {
@@ -3889,11 +3910,13 @@ function importAgentsCsvFile(file) {
     } catch {
       setAgentImportNotice("That agent CSV could not be imported.");
     } finally {
+      setButtonBusy(elements.importAgentsCsvButton, false);
       elements.agentCsvFileInput.value = "";
     }
   });
 
   reader.addEventListener("error", () => {
+    setButtonBusy(elements.importAgentsCsvButton, false);
     setAgentImportNotice("That agent CSV could not be read.");
     elements.agentCsvFileInput.value = "";
   });
