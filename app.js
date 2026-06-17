@@ -2275,6 +2275,50 @@ function renderListToggleButton(button, expanded, total, limit) {
   button.disabled = total <= limit && !expanded;
 }
 
+function updateActiveListItem(list, selectedId) {
+  list.querySelectorAll(".prospect-item").forEach((item) => {
+    item.classList.toggle("active", item.dataset.recordId === selectedId);
+  });
+}
+
+function selectProspect(prospectId) {
+  if (state.selectedId === prospectId) {
+    scrollProspectDetailsIntoView();
+    return;
+  }
+
+  state.selectedId = prospectId;
+  updateActiveListItem(elements.prospectList, prospectId);
+  const selected = getSelectedProspect();
+  renderForm(selected);
+  renderTimeline(selected);
+  scrollProspectDetailsIntoView();
+}
+
+function selectUnit(unitId) {
+  if (state.selectedUnitId === unitId) {
+    return;
+  }
+
+  state.selectedUnitId = unitId;
+  updateActiveListItem(elements.unitList, unitId);
+  const selectedUnit = getSelectedUnit();
+  renderUnitForm(selectedUnit);
+  renderUnitDocuments(selectedUnit);
+}
+
+function selectAgent(agentId) {
+  if (state.selectedAgentId === agentId) {
+    return;
+  }
+
+  state.selectedAgentId = agentId;
+  updateActiveListItem(elements.agentList, agentId);
+  const selectedAgent = getSelectedAgent();
+  renderAgentForm(selectedAgent);
+  renderAgentTimeline(selectedAgent);
+}
+
 function renderProspectList() {
   const prospects = visibleProspects();
   const filteredCount = filteredProspects().length;
@@ -2299,15 +2343,14 @@ function renderProspectList() {
 
   prospects.forEach((prospect) => {
     const item = elements.prospectItemTemplate.content.firstElementChild.cloneNode(true);
+    item.dataset.recordId = prospect.id;
     item.classList.toggle("active", prospect.id === state.selectedId);
     item.querySelector('[data-field="name"]').textContent = prospect.name || "Unnamed prospect";
     item.querySelector('[data-field="business"]').textContent = prospect.business || prospect.phone || "No business entered";
     item.querySelector('[data-field="status"]').textContent = normalizeStatus(prospect.status);
     item.querySelector('[data-field="lastContact"]').textContent = formatDateTime(prospect.interactions?.[0]?.createdAt);
     item.addEventListener("click", () => {
-      state.selectedId = prospect.id;
-      render();
-      scrollProspectDetailsIntoView();
+      selectProspect(prospect.id);
     });
     elements.prospectList.append(item);
   });
@@ -2401,6 +2444,7 @@ function renderUnitList() {
 
   units.forEach((unit) => {
     const item = elements.unitItemTemplate.content.firstElementChild.cloneNode(true);
+    item.dataset.recordId = unit.id;
     item.classList.toggle("active", unit.id === state.selectedUnitId);
     item.querySelector('[data-field="number"]').textContent = unit.number || "Unnamed unit";
     item.querySelector('[data-field="availableDate"]').textContent = unit.availableDate
@@ -2409,8 +2453,7 @@ function renderUnitList() {
     item.querySelector('[data-field="currentPrice"]').textContent = formatMoney(unit.currentPrice);
     item.querySelector('[data-field="updatedAt"]').textContent = `Updated ${formatDateTime(unit.updatedAt)}`;
     item.addEventListener("click", () => {
-      state.selectedUnitId = unit.id;
-      render();
+      selectUnit(unit.id);
     });
     elements.unitList.append(item);
   });
@@ -2571,6 +2614,7 @@ function renderAgentList() {
 
   agents.forEach((agent) => {
     const item = elements.agentItemTemplate.content.firstElementChild.cloneNode(true);
+    item.dataset.recordId = agent.id;
     item.classList.toggle("active", agent.id === state.selectedAgentId);
     item.querySelector('[data-field="name"]').textContent = agent.name || "Unnamed agent";
     item.querySelector('[data-field="agency"]').textContent = agent.agency || agent.phone || "No agency entered";
@@ -2579,8 +2623,7 @@ function renderAgentList() {
       ? formatDateTime(agent.interactions[0].createdAt)
       : "No notes yet";
     item.addEventListener("click", () => {
-      state.selectedAgentId = agent.id;
-      render();
+      selectAgent(agent.id);
     });
     elements.agentList.append(item);
   });
