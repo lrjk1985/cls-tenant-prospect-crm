@@ -44,6 +44,9 @@ const state = {
 const defaultProspectLimit = 3;
 const defaultAgentLimit = 3;
 const mobileProspectLayoutQuery = window.matchMedia("(max-width: 960px)");
+const uiState = {
+  renderFrame: null,
+};
 
 const elements = {
   authScreen: document.querySelector("#authScreen"),
@@ -1397,6 +1400,28 @@ function appendLoadingSkeleton(container, label, rows = 3) {
   container.append(stack);
 }
 
+function scheduleRender() {
+  if (uiState.renderFrame) {
+    return;
+  }
+
+  uiState.renderFrame = window.requestAnimationFrame(() => {
+    uiState.renderFrame = null;
+    render();
+  });
+}
+
+function debounce(callback, delay = 140) {
+  let timer = null;
+
+  return (...args) => {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => {
+      callback(...args);
+    }, delay);
+  };
+}
+
 function setNotice(message) {
   setNoticeText(elements.savedNotice, message);
 
@@ -2696,6 +2721,34 @@ function renderTabs() {
   elements.agentTopbarActions.classList.toggle("hidden", !showingAgents);
 }
 
+function activeVisibleTab() {
+  if (state.activeTab === "units") {
+    return "units";
+  }
+
+  if (state.activeTab === "agents") {
+    return "agents";
+  }
+
+  if (state.activeTab === "admin" && state.currentProfile?.role === "admin") {
+    return "admin";
+  }
+
+  return "prospects";
+}
+
+function loadingStateAffectsVisibleTab(loadingKey) {
+  const activeTab = activeVisibleTab();
+
+  return (
+    (loadingKey === "isLoadingProspects" && activeTab === "prospects")
+    || (loadingKey === "isLoadingUnits" && activeTab === "units")
+    || (loadingKey === "isLoadingAgents" && activeTab === "agents")
+    || (loadingKey === "isLoadingTradeCategories" && (activeTab === "prospects" || activeTab === "admin"))
+    || (loadingKey === "isLoadingUsers" && activeTab === "admin")
+  );
+}
+
 function setActiveTab(tab) {
   if (tab === "admin" && state.currentProfile?.role !== "admin") {
     return;
@@ -2844,24 +2897,38 @@ function renderUsers() {
 }
 
 function render() {
-  const selected = getSelectedProspect();
-  const selectedUnit = getSelectedUnit();
-  const selectedAgent = getSelectedAgent();
+  const activeTab = activeVisibleTab();
   renderTabs();
   renderAccount();
-  renderStats();
-  renderFilterOptions();
-  renderProspectList();
-  renderForm(selected);
-  renderTimeline(selected);
-  renderUnitStats();
-  renderUnitList();
-  renderUnitForm(selectedUnit);
-  renderUnitDocuments(selectedUnit);
-  renderAgentStats();
-  renderAgentList();
-  renderAgentForm(selectedAgent);
-  renderAgentTimeline(selectedAgent);
+
+  if (activeTab === "prospects") {
+    const selected = getSelectedProspect();
+    renderStats();
+    renderFilterOptions();
+    renderProspectList();
+    renderForm(selected);
+    renderTimeline(selected);
+    return;
+  }
+
+  if (activeTab === "units") {
+    const selectedUnit = getSelectedUnit();
+    renderUnitStats();
+    renderUnitList();
+    renderUnitForm(selectedUnit);
+    renderUnitDocuments(selectedUnit);
+    return;
+  }
+
+  if (activeTab === "agents") {
+    const selectedAgent = getSelectedAgent();
+    renderAgentStats();
+    renderAgentList();
+    renderAgentForm(selectedAgent);
+    renderAgentTimeline(selectedAgent);
+    return;
+  }
+
   renderTradeCategoryList();
   renderUsers();
 }
@@ -2935,16 +3002,24 @@ async function loadUsers() {
 }
 
 async function loadCloudSection(loadingKey, loader, onError) {
-  state[loadingKey] = true;
-  render();
+  if (!state[loadingKey]) {
+    state[loadingKey] = true;
+    if (loadingStateAffectsVisibleTab(loadingKey)) {
+      scheduleRender();
+    }
+  }
 
   try {
     await loader();
   } catch (error) {
     onError(error);
   } finally {
-    state[loadingKey] = false;
-    render();
+    if (state[loadingKey]) {
+      state[loadingKey] = false;
+      if (loadingStateAffectsVisibleTab(loadingKey)) {
+        scheduleRender();
+      }
+    }
   }
 }
 
@@ -4152,19 +4227,23 @@ elements.tradeCategoryForm.addEventListener("submit", (event) => {
   addTradeCategory(new FormData(elements.tradeCategoryForm));
 });
 
+const debouncedRenderProspectList = debounce(renderProspectList, 120);
+const debouncedRenderUnitList = debounce(renderUnitList, 120);
+const debouncedRenderAgentList = debounce(renderAgentList, 120);
+
 elements.searchInput.addEventListener("input", (event) => {
   state.searchTerm = event.target.value;
-  renderProspectList();
+  debouncedRenderProspectList();
 });
 
 elements.unitSearchInput.addEventListener("input", (event) => {
   state.unitSearchTerm = event.target.value;
-  renderUnitList();
+  debouncedRenderUnitList();
 });
 
 elements.agentSearchInput.addEventListener("input", (event) => {
   state.agentSearchTerm = event.target.value;
-  renderAgentList();
+  debouncedRenderAgentList();
 });
 
 elements.contactDateInput.addEventListener("input", (event) => {
