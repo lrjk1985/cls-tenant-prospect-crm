@@ -510,7 +510,7 @@ function prospectToDb(prospect) {
 }
 
 function mapProspectFromDb(row, interactions = []) {
-  return {
+  return refreshProspectSearchCache({
     id: row.id,
     name: row.name || "",
     business: row.business || "",
@@ -531,7 +531,7 @@ function mapProspectFromDb(row, interactions = []) {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     interactions,
-  };
+  });
 }
 
 async function mapProspectInteractionFromDb(row) {
@@ -584,7 +584,7 @@ function mapUnitFromDb(row, documents = []) {
     }
   });
 
-  return {
+  return refreshUnitSearchCache({
     id: row.id,
     number: row.number || "",
     pricePerSqft: row.price_per_sqft ?? "",
@@ -598,7 +598,7 @@ function mapUnitFromDb(row, documents = []) {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     documents: groupedDocuments,
-  };
+  });
 }
 
 async function mapUnitDocumentFromDb(row) {
@@ -634,7 +634,7 @@ function agentToDb(agent) {
 }
 
 function mapAgentFromDb(row, interactions = []) {
-  return {
+  return refreshAgentSearchCache({
     id: row.id,
     name: row.name || "",
     agency: row.agency || "",
@@ -650,7 +650,7 @@ function mapAgentFromDb(row, interactions = []) {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     interactions,
-  };
+  });
 }
 
 function mapAgentInteractionFromDb(row) {
@@ -1238,7 +1238,7 @@ function filteredUnits() {
   const term = state.unitSearchTerm.trim().toLowerCase();
 
   return sortUnits(
-    state.units.filter((unit) => !term || unitSearchText(unit).includes(term)),
+    state.units.filter((unit) => !term || unitCachedSearchText(unit).includes(term)),
   );
 }
 
@@ -1269,11 +1269,44 @@ function agentSearchText(agent) {
     .toLowerCase();
 }
 
+function refreshProspectSearchCache(prospect) {
+  prospect.searchText = prospectSearchText(prospect);
+  return prospect;
+}
+
+function refreshUnitSearchCache(unit) {
+  unit.searchText = unitSearchText(unit);
+  return unit;
+}
+
+function refreshAgentSearchCache(agent) {
+  agent.searchText = agentSearchText(agent);
+  return agent;
+}
+
+function prospectCachedSearchText(prospect) {
+  return prospect.searchText || refreshProspectSearchCache(prospect).searchText;
+}
+
+function unitCachedSearchText(unit) {
+  return unit.searchText || refreshUnitSearchCache(unit).searchText;
+}
+
+function agentCachedSearchText(agent) {
+  return agent.searchText || refreshAgentSearchCache(agent).searchText;
+}
+
+function refreshAllSearchCaches() {
+  state.prospects.forEach(refreshProspectSearchCache);
+  state.units.forEach(refreshUnitSearchCache);
+  state.agents.forEach(refreshAgentSearchCache);
+}
+
 function filteredAgents() {
   const term = state.agentSearchTerm.trim().toLowerCase();
 
   return sortAgents(
-    state.agents.filter((agent) => !term || agentSearchText(agent).includes(term)),
+    state.agents.filter((agent) => !term || agentCachedSearchText(agent).includes(term)),
   );
 }
 
@@ -1296,7 +1329,7 @@ function filteredProspects() {
 
   return sortProspects(
     state.prospects.filter((prospect) => {
-      const matchesSearch = !term || prospectSearchText(prospect).includes(term);
+      const matchesSearch = !term || prospectCachedSearchText(prospect).includes(term);
       const matchesContactDate = interactionDateMatches(prospect, contactDate, contactYear);
       const matchesTrade = !tradeFilter || normalizeFilterValue(prospect.trade) === tradeFilter;
       const matchesStatus = !statusFilter || normalizeStatus(prospect.status) === statusFilter;
@@ -1628,6 +1661,7 @@ function createProspect() {
   };
 
   state.prospects.unshift(prospect);
+  refreshProspectSearchCache(prospect);
   state.selectedId = prospect.id;
   render();
   scrollProspectDetailsIntoView();
@@ -1653,6 +1687,7 @@ function createUnit() {
   };
 
   state.units.unshift(unit);
+  refreshUnitSearchCache(unit);
   state.selectedUnitId = unit.id;
   state.activeTab = "units";
   render();
@@ -1680,6 +1715,7 @@ function createAgent() {
   };
 
   state.agents.unshift(agent);
+  refreshAgentSearchCache(agent);
   state.selectedAgentId = agent.id;
   state.activeTab = "agents";
   render();
@@ -1803,6 +1839,7 @@ async function updateSelectedProspect(formData) {
   prospect.isDraft = false;
   prospect.updatedBy = currentUserId();
   prospect.updatedAt = nowIso();
+  refreshProspectSearchCache(prospect);
   try {
     await upsertProspectToCloud(prospect);
   } catch (error) {
@@ -1835,6 +1872,7 @@ async function updateSelectedUnit(formData) {
   unit.updatedBy = currentUserId();
   unit.updatedAt = nowIso();
   unit.documents = unit.documents || createEmptyUnitDocuments();
+  refreshUnitSearchCache(unit);
   try {
     await upsertUnitToCloud(unit);
   } catch (error) {
@@ -1869,6 +1907,7 @@ async function updateSelectedAgent(formData) {
   agent.updatedBy = currentUserId();
   agent.updatedAt = nowIso();
   agent.interactions = agent.interactions || [];
+  refreshAgentSearchCache(agent);
   try {
     await upsertAgentToCloud(agent);
   } catch (error) {
@@ -1937,6 +1976,7 @@ async function addInteraction(note, file) {
     prospect.interactions.unshift(await mapProspectInteractionFromDb(data));
     prospect.updatedBy = currentUserId();
     prospect.updatedAt = nowIso();
+    refreshProspectSearchCache(prospect);
     await upsertProspectToCloud(prospect);
   } catch (error) {
     await deleteCloudFile(attachment?.path);
@@ -2008,6 +2048,7 @@ async function saveUnitDocuments() {
     unit.documents = documents;
     unit.updatedBy = currentUserId();
     unit.updatedAt = nowIso();
+    refreshUnitSearchCache(unit);
     await upsertUnitToCloud(unit);
   } catch (error) {
     for (const attachment of uploadedAttachments) {
@@ -2068,6 +2109,7 @@ async function addAgentInteraction(note) {
   agent.interactions.unshift(mapAgentInteractionFromDb(data));
   agent.updatedBy = currentUserId();
   agent.updatedAt = nowIso();
+  refreshAgentSearchCache(agent);
 
   try {
     await upsertAgentToCloud(agent);
@@ -2106,6 +2148,7 @@ async function deleteAgentInteraction(interactionId) {
   agent.interactions = (agent.interactions || []).filter((interaction) => interaction.id !== interactionId);
   agent.updatedBy = currentUserId();
   agent.updatedAt = nowIso();
+  refreshAgentSearchCache(agent);
   await upsertAgentToCloud(agent);
   render();
 }
@@ -2162,6 +2205,7 @@ async function deleteUnitDocument(type, documentId) {
 
   unit.updatedAt = nowIso();
   unit.updatedBy = currentUserId();
+  refreshUnitSearchCache(unit);
   await upsertUnitToCloud(unit);
   render();
 }
@@ -2194,6 +2238,7 @@ async function deleteInteraction(interactionId) {
   prospect.interactions = prospect.interactions.filter((item) => item.id !== interactionId);
   prospect.updatedBy = currentUserId();
   prospect.updatedAt = nowIso();
+  refreshProspectSearchCache(prospect);
   await upsertProspectToCloud(prospect);
   render();
 }
@@ -2999,6 +3044,7 @@ async function loadUsers() {
   }
 
   state.users = data?.users || [];
+  refreshAllSearchCaches();
 }
 
 async function loadCloudSection(loadingKey, loader, onError) {
@@ -3514,13 +3560,14 @@ function mergeImportedProspects(importedProspects) {
       );
       existingProspect.interactions.unshift(...newInteractions);
       existingProspect.interactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      refreshProspectSearchCache(existingProspect);
       updatedCount += 1;
       interactionCount += newInteractions.length;
       firstImportedId = firstImportedId || existingProspect.id;
       return;
     }
 
-    state.prospects.unshift(importedProspect);
+    state.prospects.unshift(refreshProspectSearchCache(importedProspect));
     existingByKey.set(key, importedProspect);
     addedCount += 1;
     interactionCount += importedProspect.interactions.length;
@@ -3723,12 +3770,13 @@ function mergeImportedUnits(importedUnits) {
       existingUnit.isDraft = false;
       existingUnit.updatedBy = currentUserId();
       existingUnit.updatedAt = nowIso();
+      refreshUnitSearchCache(existingUnit);
       updatedCount += 1;
       firstImportedId = firstImportedId || existingUnit.id;
       return;
     }
 
-    state.units.unshift(importedUnit);
+    state.units.unshift(refreshUnitSearchCache(importedUnit));
     existingByNumber.set(key, importedUnit);
     addedCount += 1;
     firstImportedId = firstImportedId || importedUnit.id;
@@ -3854,13 +3902,14 @@ function mergeImportedAgents(importedAgents) {
       );
       existingAgent.interactions.unshift(...newInteractions);
       existingAgent.interactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      refreshAgentSearchCache(existingAgent);
       updatedCount += 1;
       interactionCount += newInteractions.length;
       firstImportedId = firstImportedId || existingAgent.id;
       return;
     }
 
-    state.agents.unshift(importedAgent);
+    state.agents.unshift(refreshAgentSearchCache(importedAgent));
     existingByKey.set(key, importedAgent);
     addedCount += 1;
     interactionCount += importedAgent.interactions.length;
