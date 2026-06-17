@@ -50,6 +50,7 @@ const elements = {
   authForm: document.querySelector("#authForm"),
   authEmailInput: document.querySelector("#authEmailInput"),
   authPasswordInput: document.querySelector("#authPasswordInput"),
+  loginButton: document.querySelector("#loginButton"),
   signupButton: document.querySelector("#signupButton"),
   authNotice: document.querySelector("#authNotice"),
   appShell: document.querySelector("#appShell"),
@@ -1328,8 +1329,70 @@ function visibleProspects() {
   return prospects.slice(0, defaultProspectLimit);
 }
 
+function setButtonBusy(button, isBusy, busyText = "Working...") {
+  if (!button) {
+    return;
+  }
+
+  if (isBusy) {
+    button.dataset.idleText = button.textContent;
+    button.textContent = busyText;
+    button.disabled = true;
+    button.classList.add("is-busy");
+    button.setAttribute("aria-busy", "true");
+    return;
+  }
+
+  if (button.dataset.idleText) {
+    button.textContent = button.dataset.idleText;
+    delete button.dataset.idleText;
+  }
+
+  button.disabled = false;
+  button.classList.remove("is-busy");
+  button.removeAttribute("aria-busy");
+}
+
+function markNoticeUpdated(element) {
+  if (!element) {
+    return;
+  }
+
+  element.classList.remove("notice-updated");
+  void element.offsetWidth;
+  element.classList.add("notice-updated");
+}
+
+function setNoticeText(element, message) {
+  if (!element) {
+    return;
+  }
+
+  element.textContent = message;
+  markNoticeUpdated(element);
+}
+
+function appendLoadingSkeleton(container, label, rows = 3) {
+  const status = document.createElement("p");
+  status.className = "sr-only";
+  status.textContent = label;
+  container.append(status);
+
+  const stack = document.createElement("div");
+  stack.className = "loading-stack";
+  stack.setAttribute("aria-hidden", "true");
+
+  for (let index = 0; index < rows; index += 1) {
+    const item = document.createElement("div");
+    item.className = "loading-card";
+    stack.append(item);
+  }
+
+  container.append(stack);
+}
+
 function setNotice(message) {
-  elements.savedNotice.textContent = message;
+  setNoticeText(elements.savedNotice, message);
 
   if (!message) {
     return;
@@ -1337,13 +1400,13 @@ function setNotice(message) {
 
   window.setTimeout(() => {
     if (elements.savedNotice.textContent === message) {
-      elements.savedNotice.textContent = "";
+      setNoticeText(elements.savedNotice, "");
     }
   }, 2200);
 }
 
 function setImportNotice(message) {
-  elements.importNotice.textContent = message;
+  setNoticeText(elements.importNotice, message);
 
   if (!message) {
     return;
@@ -1351,13 +1414,13 @@ function setImportNotice(message) {
 
   window.setTimeout(() => {
     if (elements.importNotice.textContent === message) {
-      elements.importNotice.textContent = "";
+      setNoticeText(elements.importNotice, "");
     }
   }, 4200);
 }
 
 function setUnitImportNotice(message) {
-  elements.unitImportNotice.textContent = message;
+  setNoticeText(elements.unitImportNotice, message);
 
   if (!message) {
     return;
@@ -1365,13 +1428,13 @@ function setUnitImportNotice(message) {
 
   window.setTimeout(() => {
     if (elements.unitImportNotice.textContent === message) {
-      elements.unitImportNotice.textContent = "";
+      setNoticeText(elements.unitImportNotice, "");
     }
   }, 4200);
 }
 
 function setAgentImportNotice(message) {
-  elements.agentImportNotice.textContent = message;
+  setNoticeText(elements.agentImportNotice, message);
 
   if (!message) {
     return;
@@ -1379,13 +1442,13 @@ function setAgentImportNotice(message) {
 
   window.setTimeout(() => {
     if (elements.agentImportNotice.textContent === message) {
-      elements.agentImportNotice.textContent = "";
+      setNoticeText(elements.agentImportNotice, "");
     }
   }, 4200);
 }
 
 function setInteractionNotice(message) {
-  elements.interactionNotice.textContent = message || defaultInteractionNotice;
+  setNoticeText(elements.interactionNotice, message || defaultInteractionNotice);
 
   if (!message) {
     return;
@@ -1393,13 +1456,13 @@ function setInteractionNotice(message) {
 
   window.setTimeout(() => {
     if (elements.interactionNotice.textContent === message) {
-      elements.interactionNotice.textContent = defaultInteractionNotice;
+      setNoticeText(elements.interactionNotice, defaultInteractionNotice);
     }
   }, 3600);
 }
 
 function setUnitNotice(message) {
-  elements.unitSavedNotice.textContent = message;
+  setNoticeText(elements.unitSavedNotice, message);
 
   if (!message) {
     return;
@@ -1407,13 +1470,13 @@ function setUnitNotice(message) {
 
   window.setTimeout(() => {
     if (elements.unitSavedNotice.textContent === message) {
-      elements.unitSavedNotice.textContent = "";
+      setNoticeText(elements.unitSavedNotice, "");
     }
   }, 2200);
 }
 
 function setAgentNotice(message) {
-  elements.agentSavedNotice.textContent = message;
+  setNoticeText(elements.agentSavedNotice, message);
 
   if (!message) {
     return;
@@ -1421,13 +1484,13 @@ function setAgentNotice(message) {
 
   window.setTimeout(() => {
     if (elements.agentSavedNotice.textContent === message) {
-      elements.agentSavedNotice.textContent = "";
+      setNoticeText(elements.agentSavedNotice, "");
     }
   }, 2200);
 }
 
 function setTradeCategoryNotice(message) {
-  elements.tradeCategoryNotice.textContent = message;
+  setNoticeText(elements.tradeCategoryNotice, message);
 
   if (!message) {
     return;
@@ -1435,13 +1498,13 @@ function setTradeCategoryNotice(message) {
 
   window.setTimeout(() => {
     if (elements.tradeCategoryNotice.textContent === message) {
-      elements.tradeCategoryNotice.textContent = "";
+      setNoticeText(elements.tradeCategoryNotice, "");
     }
   }, 2600);
 }
 
 function setUnitDocumentNotice(message) {
-  elements.unitDocumentNotice.textContent = message || defaultUnitDocumentNotice;
+  setNoticeText(elements.unitDocumentNotice, message || defaultUnitDocumentNotice);
 
   if (!message) {
     return;
@@ -1449,13 +1512,13 @@ function setUnitDocumentNotice(message) {
 
   window.setTimeout(() => {
     if (elements.unitDocumentNotice.textContent === message) {
-      elements.unitDocumentNotice.textContent = defaultUnitDocumentNotice;
+      setNoticeText(elements.unitDocumentNotice, defaultUnitDocumentNotice);
     }
   }, 3600);
 }
 
 function setAgentInteractionNotice(message) {
-  elements.agentInteractionNotice.textContent = message || defaultAgentInteractionNotice;
+  setNoticeText(elements.agentInteractionNotice, message || defaultAgentInteractionNotice);
 
   if (!message) {
     return;
@@ -1463,7 +1526,7 @@ function setAgentInteractionNotice(message) {
 
   window.setTimeout(() => {
     if (elements.agentInteractionNotice.textContent === message) {
-      elements.agentInteractionNotice.textContent = defaultAgentInteractionNotice;
+      setNoticeText(elements.agentInteractionNotice, defaultAgentInteractionNotice);
     }
   }, 3600);
 }
@@ -1692,6 +1755,7 @@ async function updateSelectedProspect(formData) {
     return;
   }
 
+  setButtonBusy(elements.saveProspectButton, true, "Saving...");
   prospect.name = formData.get("name").toString().trim() || "Unnamed prospect";
   prospect.business = formData.get("business").toString().trim();
   prospect.agency = formData.get("agency").toString().trim();
@@ -1711,11 +1775,13 @@ async function updateSelectedProspect(formData) {
   try {
     await upsertProspectToCloud(prospect);
   } catch (error) {
+    setButtonBusy(elements.saveProspectButton, false);
     render();
     setNotice(error.message || storageFullNotice);
     return;
   }
 
+  setButtonBusy(elements.saveProspectButton, false);
   render();
   setNotice("Prospect saved.");
 }
@@ -1727,6 +1793,7 @@ async function updateSelectedUnit(formData) {
     return;
   }
 
+  setButtonBusy(elements.saveUnitButton, true, "Saving...");
   unit.number = formData.get("number").toString().trim() || "Unnamed unit";
   unit.pricePerSqft = formData.get("pricePerSqft").toString().trim();
   unit.lastOperationDate = parseDisplayDate(formData.get("lastOperationDate")) || "";
@@ -1740,11 +1807,13 @@ async function updateSelectedUnit(formData) {
   try {
     await upsertUnitToCloud(unit);
   } catch (error) {
+    setButtonBusy(elements.saveUnitButton, false);
     render();
     setUnitNotice(error.message || storageFullNotice);
     return;
   }
 
+  setButtonBusy(elements.saveUnitButton, false);
   render();
   setUnitNotice("Unit saved.");
 }
@@ -1756,6 +1825,7 @@ async function updateSelectedAgent(formData) {
     return;
   }
 
+  setButtonBusy(elements.saveAgentButton, true, "Saving...");
   agent.name = formData.get("name").toString().trim() || "Unnamed agent";
   agent.agency = formData.get("agency").toString().trim();
   agent.phone = formData.get("phone").toString().trim();
@@ -1771,11 +1841,13 @@ async function updateSelectedAgent(formData) {
   try {
     await upsertAgentToCloud(agent);
   } catch (error) {
+    setButtonBusy(elements.saveAgentButton, false);
     render();
     setAgentNotice(error.message || storageFullNotice);
     return;
   }
 
+  setButtonBusy(elements.saveAgentButton, false);
   render();
   setAgentNotice("Agent saved.");
 }
@@ -1783,6 +1855,7 @@ async function updateSelectedAgent(formData) {
 async function addInteraction(note, file) {
   const prospect = getSelectedProspect();
   const cleanNote = note.trim();
+  const submitButton = elements.interactionForm.querySelector('button[type="submit"]');
 
   if (!prospect) {
     return;
@@ -1799,6 +1872,7 @@ async function addInteraction(note, file) {
   }
 
   let attachment = null;
+  setButtonBusy(submitButton, true, "Adding...");
 
   try {
     attachment = await uploadCloudFile(file, `prospects/${prospect.id}/interactions`);
@@ -1807,6 +1881,7 @@ async function addInteraction(note, file) {
       error.message === "file-too-large"
         ? `Attachment is too large. Please choose a file under ${formatFileSize(maxAttachmentSize)}.`
         : "Attachment could not be read.";
+    setButtonBusy(submitButton, false);
     setInteractionNotice(message);
     return;
   }
@@ -1834,12 +1909,14 @@ async function addInteraction(note, file) {
     await upsertProspectToCloud(prospect);
   } catch (error) {
     await deleteCloudFile(attachment?.path);
+    setButtonBusy(submitButton, false);
     setInteractionNotice(error.message || "Attachment could not be saved.");
     return;
   }
 
   elements.interactionInput.value = "";
   elements.interactionFileInput.value = "";
+  setButtonBusy(submitButton, false);
   setInteractionNotice("Interaction added.");
   render();
 }
@@ -1849,6 +1926,7 @@ async function saveUnitDocuments() {
   const floorPlanFile = elements.unitFloorPlanInput.files[0] || null;
   const meFile = elements.unitMeInput.files[0] || null;
   const photoFiles = Array.from(elements.unitPhotosInput.files || []);
+  const submitButton = elements.unitDocumentsForm.querySelector('button[type="submit"]');
 
   if (!unit) {
     return;
@@ -1868,6 +1946,7 @@ async function saveUnitDocuments() {
   const documents = unit.documents || createEmptyUnitDocuments();
   documents.photos = documents.photos || [];
   const uploadedAttachments = [];
+  setButtonBusy(submitButton, true, "Saving...");
 
   try {
     const floorPlan = await uploadCloudFile(floorPlanFile, `units/${unit.id}/floor-plan`);
@@ -1908,6 +1987,7 @@ async function saveUnitDocuments() {
       error.message === "file-too-large"
         ? `One file is too large. Please choose files under ${formatFileSize(maxAttachmentSize)} each.`
         : "Those files could not be saved.";
+    setButtonBusy(submitButton, false);
     setUnitDocumentNotice(message);
     return;
   }
@@ -1915,6 +1995,7 @@ async function saveUnitDocuments() {
   elements.unitFloorPlanInput.value = "";
   elements.unitMeInput.value = "";
   elements.unitPhotosInput.value = "";
+  setButtonBusy(submitButton, false);
   setUnitDocumentNotice("Files saved.");
   render();
 }
@@ -1922,6 +2003,7 @@ async function saveUnitDocuments() {
 async function addAgentInteraction(note) {
   const agent = getSelectedAgent();
   const cleanNote = note.trim();
+  const submitButton = elements.agentInteractionForm.querySelector('button[type="submit"]');
 
   if (!agent) {
     return;
@@ -1937,6 +2019,7 @@ async function addAgentInteraction(note) {
     return;
   }
 
+  setButtonBusy(submitButton, true, "Adding...");
   const { data, error } = await cloudClient.from("agent_interactions").insert({
     agent_id: agent.id,
     note: cleanNote,
@@ -1945,6 +2028,7 @@ async function addAgentInteraction(note) {
   }).select().single();
 
   if (error) {
+    setButtonBusy(submitButton, false);
     setAgentInteractionNotice(error.message);
     return;
   }
@@ -1953,8 +2037,17 @@ async function addAgentInteraction(note) {
   agent.interactions.unshift(mapAgentInteractionFromDb(data));
   agent.updatedBy = currentUserId();
   agent.updatedAt = nowIso();
-  await upsertAgentToCloud(agent);
+
+  try {
+    await upsertAgentToCloud(agent);
+  } catch (upsertError) {
+    setButtonBusy(submitButton, false);
+    setAgentInteractionNotice(upsertError.message || storageFullNotice);
+    return;
+  }
+
   elements.agentInteractionInput.value = "";
+  setButtonBusy(submitButton, false);
   setAgentInteractionNotice("Note added.");
   render();
 }
@@ -2114,11 +2207,15 @@ function renderProspectList() {
   renderListToggleButton(elements.showAllProspectsButton, state.showAllProspects, filteredCount, defaultProspectLimit);
 
   if (prospects.length === 0) {
+    if (state.isLoadingProspects) {
+      appendLoadingSkeleton(elements.prospectList, "Loading prospects...");
+      elements.prospectList.scrollTop = previousScrollTop;
+      return;
+    }
+
     const empty = document.createElement("p");
     empty.className = "saved-notice";
-    empty.textContent = state.isLoadingProspects
-      ? "Loading prospects..."
-      : state.prospects.length ? "No prospects match your filters." : "No prospects yet.";
+    empty.textContent = state.prospects.length ? "No prospects match your filters." : "No prospects yet.";
     elements.prospectList.append(empty);
     elements.prospectList.scrollTop = previousScrollTop;
     return;
@@ -2214,11 +2311,14 @@ function renderUnitList() {
   elements.unitList.replaceChildren();
 
   if (units.length === 0) {
+    if (state.isLoadingUnits) {
+      appendLoadingSkeleton(elements.unitList, "Loading units...");
+      return;
+    }
+
     const empty = document.createElement("p");
     empty.className = "saved-notice";
-    empty.textContent = state.isLoadingUnits
-      ? "Loading units..."
-      : state.units.length ? "No units match your search." : "No units yet.";
+    empty.textContent = state.units.length ? "No units match your search." : "No units yet.";
     elements.unitList.append(empty);
     return;
   }
@@ -2381,11 +2481,14 @@ function renderAgentList() {
   renderListToggleButton(elements.showAllAgentsButton, state.showAllAgents, filteredCount, defaultAgentLimit);
 
   if (agents.length === 0) {
+    if (state.isLoadingAgents) {
+      appendLoadingSkeleton(elements.agentList, "Loading agents...");
+      return;
+    }
+
     const empty = document.createElement("p");
     empty.className = "saved-notice";
-    empty.textContent = state.isLoadingAgents
-      ? "Loading agents..."
-      : state.agents.length ? "No agents match your search." : "No agents yet.";
+    empty.textContent = state.agents.length ? "No agents match your search." : "No agents yet.";
     elements.agentList.append(empty);
     return;
   }
@@ -2610,10 +2713,7 @@ function renderTradeCategoryList() {
   }
 
   if (state.isLoadingTradeCategories) {
-    const loading = document.createElement("p");
-    loading.className = "saved-notice";
-    loading.textContent = "Loading trade categories...";
-    elements.tradeCategoryList.append(loading);
+    appendLoadingSkeleton(elements.tradeCategoryList, "Loading trade categories...", 2);
     return;
   }
 
@@ -2681,10 +2781,7 @@ function renderUsers() {
   }
 
   if (state.isLoadingUsers) {
-    const loading = document.createElement("p");
-    loading.className = "saved-notice";
-    loading.textContent = "Loading approved users...";
-    elements.userList.append(loading);
+    appendLoadingSkeleton(elements.userList, "Loading approved users...", 3);
     return;
   }
 
@@ -2732,7 +2829,7 @@ function renderUsers() {
       fullName: user.full_name || "",
       role: roleSelect.value,
       active: activeSelect.value === "true",
-    }));
+    }, updateButton));
 
     controls.append(roleSelect, activeSelect, updateButton);
     card.append(header, controls);
@@ -2766,7 +2863,7 @@ function render() {
 function showSignedOut(message = "") {
   elements.authScreen.classList.remove("hidden");
   elements.appShell.classList.add("hidden");
-  elements.authNotice.textContent = message;
+  setNoticeText(elements.authNotice, message);
 }
 
 function showSignedIn() {
@@ -2807,7 +2904,7 @@ async function loadAllCloudData() {
 
   if (state.currentProfile?.role === "admin") {
     tasks.push(loadCloudSection("isLoadingUsers", loadUsers, (error) => {
-      elements.adminNotice.textContent = error.message || "Could not load users.";
+      setNoticeText(elements.adminNotice, error.message || "Could not load users.");
     }));
   }
 
@@ -2878,18 +2975,21 @@ async function refreshAppData() {
 async function handleLogin(formData) {
   const email = formData.get("email").toString().trim();
   const password = formData.get("password").toString();
-  elements.authNotice.textContent = "Signing in...";
+  setNoticeText(elements.authNotice, "Signing in...");
+  setButtonBusy(elements.loginButton, true, "Signing in...");
 
   const { data, error } = await cloudClient.auth.signInWithPassword({ email, password });
 
   if (error) {
-    elements.authNotice.textContent = error.message;
+    setButtonBusy(elements.loginButton, false);
+    setNoticeText(elements.authNotice, error.message);
     return;
   }
 
   state.session = data.session;
   state.currentUser = data.user;
   await refreshAppData();
+  setButtonBusy(elements.loginButton, false);
 }
 
 async function handleSignup() {
@@ -2897,11 +2997,12 @@ async function handleSignup() {
   const password = elements.authPasswordInput.value;
 
   if (!email || !password) {
-    elements.authNotice.textContent = "Enter an email and password first.";
+    setNoticeText(elements.authNotice, "Enter an email and password first.");
     return;
   }
 
-  elements.authNotice.textContent = "Creating account...";
+  setNoticeText(elements.authNotice, "Creating account...");
+  setButtonBusy(elements.signupButton, true, "Creating...");
   const { data, error } = await cloudClient.auth.signUp({
     email,
     password,
@@ -2911,7 +3012,8 @@ async function handleSignup() {
   });
 
   if (error) {
-    elements.authNotice.textContent = error.message;
+    setButtonBusy(elements.signupButton, false);
+    setNoticeText(elements.authNotice, error.message);
     return;
   }
 
@@ -2919,10 +3021,12 @@ async function handleSignup() {
     state.session = data.session;
     state.currentUser = data.user;
     await refreshAppData();
+    setButtonBusy(elements.signupButton, false);
     return;
   }
 
-  elements.authNotice.textContent = "Check your email to confirm the account, then log in.";
+  setButtonBusy(elements.signupButton, false);
+  setNoticeText(elements.authNotice, "Check your email to confirm the account, then log in.");
 }
 
 async function handleLogout() {
@@ -2946,7 +3050,9 @@ async function inviteUser(formData) {
   const email = formData.get("email").toString().trim();
   const fullName = formData.get("fullName").toString().trim();
   const role = formData.get("role").toString();
-  elements.adminNotice.textContent = "Sending invite...";
+  const submitButton = elements.inviteUserForm.querySelector('button[type="submit"]');
+  setNoticeText(elements.adminNotice, "Sending invite...");
+  setButtonBusy(submitButton, true, "Sending...");
 
   try {
     const { data, error } = await cloudClient.functions.invoke("manage-users", {
@@ -2968,16 +3074,19 @@ async function inviteUser(formData) {
     }
 
     elements.inviteUserForm.reset();
-    elements.adminNotice.textContent = "User invited and approved.";
+    setNoticeText(elements.adminNotice, "User invited and approved.");
     await loadUsers();
     renderUsers();
   } catch (error) {
-    elements.adminNotice.textContent = error.message || "Could not invite user.";
+    setNoticeText(elements.adminNotice, error.message || "Could not invite user.");
+  } finally {
+    setButtonBusy(submitButton, false);
   }
 }
 
-async function updateUserAccess(payload) {
-  elements.adminNotice.textContent = "Updating user...";
+async function updateUserAccess(payload, button = null) {
+  setNoticeText(elements.adminNotice, "Updating user...");
+  setButtonBusy(button, true, "Updating...");
 
   try {
     const { data, error } = await cloudClient.functions.invoke("manage-users", {
@@ -2992,11 +3101,13 @@ async function updateUserAccess(payload) {
       throw new Error(data.error);
     }
 
-    elements.adminNotice.textContent = "User access updated.";
+    setNoticeText(elements.adminNotice, "User access updated.");
     await loadUsers();
     renderUsers();
   } catch (error) {
-    elements.adminNotice.textContent = error.message || "Could not update user.";
+    setNoticeText(elements.adminNotice, error.message || "Could not update user.");
+  } finally {
+    setButtonBusy(button, false);
   }
 }
 
@@ -3021,7 +3132,9 @@ async function addTradeCategory(formData) {
     return;
   }
 
+  const submitButton = elements.tradeCategoryForm.querySelector('button[type="submit"]');
   setTradeCategoryNotice("Saving category...");
+  setButtonBusy(submitButton, true, "Saving...");
 
   try {
     const { data, error } = await cloudClient
@@ -3051,6 +3164,8 @@ async function addTradeCategory(formData) {
   } catch (error) {
     const isDuplicate = error.code === "23505" || /duplicate/i.test(error.message || "");
     setTradeCategoryNotice(isDuplicate ? "That category already exists." : error.message || "Could not save category.");
+  } finally {
+    setButtonBusy(submitButton, false);
   }
 }
 

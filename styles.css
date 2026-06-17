@@ -1425,3 +1425,301 @@ label span,
     font-size: 22px;
   }
 }
+
+/* Interaction polish: subtle motion and feedback without changing the visual system. */
+:root {
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-medium: 260ms;
+  --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+  --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.auth-card,
+.workspace,
+.tab-panel:not(.hidden),
+.topbar-actions:not(.hidden),
+.detail-content:not(.hidden),
+.empty-state:not(.hidden) {
+  animation: crm-fade-up var(--motion-medium) var(--motion-ease-out) both;
+}
+
+.topbar-actions {
+  transition:
+    opacity var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease);
+}
+
+.primary-button,
+.secondary-button,
+.danger-button,
+.compact-inline-button,
+.link-button,
+.attachment-link,
+input[type="file"]::file-selector-button,
+input[type="file"]::-webkit-file-upload-button {
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease),
+    opacity var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+}
+
+.primary-button:hover,
+.secondary-button:hover,
+.danger-button:hover,
+.compact-inline-button:hover,
+.attachment-link:hover {
+  transform: translateY(-1px);
+}
+
+.primary-button:active,
+.secondary-button:active,
+.danger-button:active,
+.compact-inline-button:active,
+.attachment-link:active {
+  transform: translateY(0);
+}
+
+button.is-busy,
+button.is-busy:hover,
+button.is-busy:active {
+  cursor: wait;
+  opacity: 0.72;
+  transform: none;
+}
+
+button.is-busy::after {
+  content: "";
+  display: inline-block;
+  width: 0.72em;
+  height: 0.72em;
+  margin-left: 0.55em;
+  border: 1.5px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  vertical-align: -0.08em;
+  animation: crm-spin 720ms linear infinite;
+}
+
+.tab-button {
+  position: relative;
+  transition:
+    background-color var(--motion-base) var(--motion-ease),
+    border-color var(--motion-base) var(--motion-ease),
+    color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+}
+
+.tab-button:hover {
+  transform: translateY(-1px);
+}
+
+.tab-button.active {
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.02),
+    0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+input,
+select,
+textarea {
+  transition:
+    background-color var(--motion-base) var(--motion-ease),
+    border-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: #c9c9c9;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  transform: translateY(-1px);
+}
+
+.prospect-item,
+.timeline-item,
+.document-card,
+.photo-section,
+.category-card,
+.user-card {
+  transition:
+    background-color var(--motion-base) var(--motion-ease),
+    border-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    opacity var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease);
+}
+
+.prospect-item {
+  animation: crm-list-in var(--motion-base) var(--motion-ease-out) both;
+}
+
+.prospect-item:hover {
+  box-shadow: 0 7px 18px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+.prospect-item:active {
+  transform: translateY(0);
+}
+
+.prospect-item.active {
+  transform: none;
+}
+
+.timeline-item,
+.document-card,
+.photo-section,
+.category-card,
+.user-card {
+  animation: crm-list-in var(--motion-medium) var(--motion-ease-out) both;
+}
+
+.timeline-item:hover,
+.document-card:hover,
+.category-card:hover,
+.user-card:hover {
+  box-shadow: 0 7px 18px rgba(0, 0, 0, 0.04);
+  transform: translateY(-1px);
+}
+
+.photo-section:hover {
+  box-shadow: 0 7px 18px rgba(0, 0, 0, 0.03);
+}
+
+.status-pill,
+.category-pill,
+.prospect-meta span {
+  transition:
+    background-color var(--motion-base) var(--motion-ease),
+    border-color var(--motion-base) var(--motion-ease),
+    color var(--motion-base) var(--motion-ease);
+}
+
+.saved-notice,
+.timestamp-hint,
+.topbar-notice {
+  transition:
+    color var(--motion-base) var(--motion-ease),
+    opacity var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease);
+}
+
+.notice-updated {
+  animation: crm-notice-in var(--motion-medium) var(--motion-ease-out) both;
+}
+
+.loading-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.loading-line,
+.loading-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.loading-card {
+  height: 62px;
+}
+
+.loading-line {
+  height: 34px;
+}
+
+.loading-line::after,
+.loading-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  animation: crm-shimmer 1.3s var(--motion-ease) infinite;
+}
+
+@keyframes crm-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes crm-list-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes crm-notice-in {
+  0% {
+    opacity: 0.5;
+    transform: translateY(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes crm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes crm-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+
+  .primary-button:hover,
+  .secondary-button:hover,
+  .danger-button:hover,
+  .compact-inline-button:hover,
+  .attachment-link:hover,
+  .tab-button:hover,
+  input:focus,
+  select:focus,
+  textarea:focus,
+  .prospect-item:hover,
+  .timeline-item:hover,
+  .document-card:hover,
+  .category-card:hover,
+  .user-card:hover {
+    transform: none;
+  }
+}
