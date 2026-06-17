@@ -1409,6 +1409,12 @@ label span,
   border-color: #050505;
 }
 
+.attachment-link[aria-disabled="true"] {
+  cursor: wait;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
 .document-card-heading strong,
 .category-card strong,
 .user-card strong {

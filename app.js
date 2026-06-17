@@ -272,7 +272,7 @@ async function loadProspects() {
   const interactionsByProspect = new Map();
 
   for (const interaction of interactionsResult.data || []) {
-    const mappedInteraction = await mapProspectInteractionFromDb(interaction);
+    const mappedInteraction = mapProspectInteractionFromDb(interaction);
     const list = interactionsByProspect.get(interaction.prospect_id) || [];
     list.push(mappedInteraction);
     interactionsByProspect.set(interaction.prospect_id, list);
@@ -304,7 +304,7 @@ async function loadUnits() {
   const documentsByUnit = new Map();
 
   for (const document of documentsResult.data || []) {
-    const attachment = await mapUnitDocumentFromDb(document);
+    const attachment = mapUnitDocumentFromDb(document);
     const list = documentsByUnit.get(document.unit_id) || [];
     list.push(attachment);
     documentsByUnit.set(document.unit_id, list);
@@ -422,6 +422,10 @@ function fileHref(attachment) {
   return attachment?.url || attachment?.dataUrl || "";
 }
 
+function hasFileReference(attachment) {
+  return Boolean(fileHref(attachment) || attachment?.path);
+}
+
 function safeFileName(name) {
   return String(name || "file")
     .trim()
@@ -444,6 +448,30 @@ async function createSignedUrl(path) {
   }
 
   return data?.signedUrl || "";
+}
+
+function resolveFileUrl(attachment) {
+  if (!attachment) {
+    return Promise.resolve("");
+  }
+
+  if (attachment.url || attachment.dataUrl) {
+    return Promise.resolve(fileHref(attachment));
+  }
+
+  if (!attachment.path) {
+    return Promise.resolve("");
+  }
+
+  if (!attachment.urlPromise) {
+    attachment.urlPromise = createSignedUrl(attachment.path).then((url) => {
+      attachment.url = url;
+      attachment.urlPromise = null;
+      return url;
+    });
+  }
+
+  return attachment.urlPromise;
 }
 
 async function uploadCloudFile(file, folder) {
@@ -534,7 +562,7 @@ function mapProspectFromDb(row, interactions = []) {
   });
 }
 
-async function mapProspectInteractionFromDb(row) {
+function mapProspectInteractionFromDb(row) {
   const attachment = row.attachment_path
     ? {
         id: row.id,
@@ -542,7 +570,6 @@ async function mapProspectInteractionFromDb(row) {
         name: row.attachment_name || "Attachment",
         type: row.attachment_type || "application/octet-stream",
         size: row.attachment_size || 0,
-        url: await createSignedUrl(row.attachment_path),
       }
     : null;
 
@@ -601,7 +628,7 @@ function mapUnitFromDb(row, documents = []) {
   });
 }
 
-async function mapUnitDocumentFromDb(row) {
+function mapUnitDocumentFromDb(row) {
   return {
     id: row.id,
     documentType: row.document_type,
@@ -611,7 +638,6 @@ async function mapUnitDocumentFromDb(row) {
     size: row.size || 0,
     createdBy: row.created_by || "",
     createdAt: row.created_at,
-    url: await createSignedUrl(row.storage_path),
   };
 }
 
@@ -1973,7 +1999,7 @@ async function addInteraction(note, file) {
     }
 
     prospect.interactions = prospect.interactions || [];
-    prospect.interactions.unshift(await mapProspectInteractionFromDb(data));
+    prospect.interactions.unshift(mapProspectInteractionFromDb(data));
     prospect.updatedBy = currentUserId();
     prospect.updatedAt = nowIso();
     refreshProspectSearchCache(prospect);
@@ -2500,7 +2526,7 @@ function createDocumentCard(title, attachment, deleteType) {
   titleElement.textContent = title;
   heading.append(titleElement);
 
-  if (fileHref(attachment) || attachment?.path) {
+  if (hasFileReference(attachment)) {
     const deleteButton = document.createElement("button");
     deleteButton.className = "link-button";
     deleteButton.type = "button";
@@ -2511,7 +2537,7 @@ function createDocumentCard(title, attachment, deleteType) {
 
   card.append(heading);
 
-  if (!fileHref(attachment) && !attachment?.path) {
+  if (!hasFileReference(attachment)) {
     const empty = document.createElement("p");
     empty.className = "document-empty";
     empty.textContent = "No file attached.";
@@ -2521,11 +2547,27 @@ function createDocumentCard(title, attachment, deleteType) {
 
   const link = document.createElement("a");
   link.className = "attachment-link";
-  link.href = fileHref(attachment);
   link.download = attachment.name || title;
   link.target = "_blank";
   link.rel = "noopener";
   link.textContent = `${attachment.name || title} (${formatFileSize(attachment.size)})`;
+  const existingHref = fileHref(attachment);
+  if (existingHref) {
+    link.href = existingHref;
+  } else {
+    link.removeAttribute("href");
+    link.setAttribute("aria-disabled", "true");
+    link.textContent = `Preparing ${attachment.name || title}...`;
+    resolveFileUrl(attachment).then((url) => {
+      if (!url) {
+        link.textContent = `${attachment.name || title} could not load`;
+        return;
+      }
+      link.href = url;
+      link.removeAttribute("aria-disabled");
+      link.textContent = `${attachment.name || title} (${formatFileSize(attachment.size)})`;
+    });
+  }
   card.append(link);
 
   const attribution = createAttributionElement([
@@ -2542,10 +2584,19 @@ function createDocumentCard(title, attachment, deleteType) {
 function createPhotoCard(photo) {
   const card = createDocumentCard("Photo", photo, "photo");
 
-  if (fileHref(photo)) {
+  if (hasFileReference(photo)) {
     const image = document.createElement("img");
-    image.src = fileHref(photo);
     image.alt = photo.name || "Unit photo";
+    const existingHref = fileHref(photo);
+    if (existingHref) {
+      image.src = existingHref;
+    } else {
+      resolveFileUrl(photo).then((url) => {
+        if (url) {
+          image.src = url;
+        }
+      });
+    }
     card.prepend(image);
   }
 
@@ -2771,11 +2822,27 @@ function renderTimeline(prospect) {
     if (attribution) {
       item.querySelector('[data-field="note"]').after(attribution);
     }
-    if (fileHref(interaction.attachment)) {
+    if (hasFileReference(interaction.attachment)) {
       attachmentLink.classList.remove("hidden");
-      attachmentLink.href = fileHref(interaction.attachment);
       attachmentLink.download = interaction.attachment.name || "attachment";
       attachmentLink.textContent = `${interaction.attachment.name || "Attachment"} (${formatFileSize(interaction.attachment.size)})`;
+      const existingHref = fileHref(interaction.attachment);
+      if (existingHref) {
+        attachmentLink.href = existingHref;
+      } else {
+        attachmentLink.removeAttribute("href");
+        attachmentLink.setAttribute("aria-disabled", "true");
+        attachmentLink.textContent = `Preparing ${interaction.attachment.name || "attachment"}...`;
+        resolveFileUrl(interaction.attachment).then((url) => {
+          if (!url) {
+            attachmentLink.textContent = `${interaction.attachment.name || "Attachment"} could not load`;
+            return;
+          }
+          attachmentLink.href = url;
+          attachmentLink.removeAttribute("aria-disabled");
+          attachmentLink.textContent = `${interaction.attachment.name || "Attachment"} (${formatFileSize(interaction.attachment.size)})`;
+        });
+      }
     }
     item.querySelector('[data-action="delete-interaction"]').addEventListener("click", () => {
       deleteInteraction(interaction.id);
