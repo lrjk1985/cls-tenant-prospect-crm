@@ -25,6 +25,10 @@
           <button class="secondary-button" id="signupButton" type="button">Create Account</button>
         </div>
         <p class="saved-notice" id="authNotice" aria-live="polite"></p>
+        <figure class="quote-strip auth-quote" aria-label="Quote">
+          <blockquote id="authQuoteText"></blockquote>
+          <figcaption id="authQuoteSource"></figcaption>
+        </figure>
       </form>
     </section>
 
@@ -45,25 +49,31 @@
               <button class="secondary-button compact-button" id="logoutButton" type="button">Log Out</button>
             </div>
           </div>
-          <div class="topbar-actions" id="prospectTopbarActions">
-            <button class="secondary-button" id="importCsvButton" type="button">Import CSV</button>
-            <input class="file-input" id="csvFileInput" type="file" accept=".csv,text/csv" />
-            <button class="secondary-button" id="exportCsvButton" type="button">Export CSV</button>
-            <button class="primary-button" id="newProspectButton" type="button">New Prospect</button>
-            <p class="topbar-notice" id="importNotice" aria-live="polite"></p>
-          </div>
-          <div class="topbar-actions hidden" id="unitTopbarActions">
-            <button class="secondary-button" id="importUnitsCsvButton" type="button">Import Unit CSV</button>
-            <input class="file-input" id="unitCsvFileInput" type="file" accept=".csv,text/csv" />
-            <button class="primary-button" id="newUnitButton" type="button">New Unit</button>
-            <p class="topbar-notice" id="unitImportNotice" aria-live="polite"></p>
-          </div>
-          <div class="topbar-actions hidden" id="agentTopbarActions">
-            <button class="secondary-button" id="importAgentsCsvButton" type="button">Import Agent CSV</button>
-            <input class="file-input" id="agentCsvFileInput" type="file" accept=".csv,text/csv" />
-            <button class="secondary-button" id="exportAgentsCsvButton" type="button">Export Agent CSV</button>
-            <button class="primary-button" id="newAgentButton" type="button">New Agent</button>
-            <p class="topbar-notice" id="agentImportNotice" aria-live="polite"></p>
+          <div class="topbar-side">
+            <div class="topbar-actions" id="prospectTopbarActions">
+              <button class="secondary-button" id="importCsvButton" type="button">Import CSV</button>
+              <input class="file-input" id="csvFileInput" type="file" accept=".csv,text/csv" />
+              <button class="secondary-button" id="exportCsvButton" type="button">Export CSV</button>
+              <button class="primary-button" id="newProspectButton" type="button">New Prospect</button>
+              <p class="topbar-notice" id="importNotice" aria-live="polite"></p>
+            </div>
+            <div class="topbar-actions hidden" id="unitTopbarActions">
+              <button class="secondary-button" id="importUnitsCsvButton" type="button">Import Unit CSV</button>
+              <input class="file-input" id="unitCsvFileInput" type="file" accept=".csv,text/csv" />
+              <button class="primary-button" id="newUnitButton" type="button">New Unit</button>
+              <p class="topbar-notice" id="unitImportNotice" aria-live="polite"></p>
+            </div>
+            <div class="topbar-actions hidden" id="agentTopbarActions">
+              <button class="secondary-button" id="importAgentsCsvButton" type="button">Import Agent CSV</button>
+              <input class="file-input" id="agentCsvFileInput" type="file" accept=".csv,text/csv" />
+              <button class="secondary-button" id="exportAgentsCsvButton" type="button">Export Agent CSV</button>
+              <button class="primary-button" id="newAgentButton" type="button">New Agent</button>
+              <p class="topbar-notice" id="agentImportNotice" aria-live="polite"></p>
+            </div>
+            <figure class="quote-strip topbar-quote" aria-label="Quote">
+              <blockquote id="topbarQuoteText"></blockquote>
+              <figcaption id="topbarQuoteSource"></figcaption>
+            </figure>
           </div>
         </header>
 

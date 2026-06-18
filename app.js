@@ -8,6 +8,58 @@ const tradeCategoryStorageKey = "tenantProspectCrmTradeCategories";
 const defaultInteractionNotice = "Timestamp added automatically. Attachments up to 10 MB.";
 const defaultUnitDocumentNotice = "Documents are saved securely in Supabase Storage. Keep files under 10 MB each.";
 const defaultAgentInteractionNotice = "Timestamp added automatically.";
+const dailyQuotes = [
+  { text: "Brevity is the soul of wit.", author: "William Shakespeare", source: "Hamlet" },
+  { text: "Sweet are the uses of adversity.", author: "William Shakespeare", source: "As You Like It" },
+  { text: "All things are ready, if our minds be so.", author: "William Shakespeare", source: "Henry V" },
+  { text: "What's past is prologue.", author: "William Shakespeare", source: "The Tempest" },
+  { text: "Be not afraid of greatness.", author: "William Shakespeare", source: "Twelfth Night" },
+  { text: "Our bodies are our gardens.", author: "William Shakespeare", source: "Othello" },
+  { text: "Strong reasons make strong actions.", author: "William Shakespeare", source: "King John" },
+  { text: "The readiness is all.", author: "William Shakespeare", source: "Hamlet" },
+  { text: "Know your own happiness.", author: "Jane Austen", source: "Sense and Sensibility" },
+  { text: "Time will explain.", author: "Jane Austen", source: "Persuasion" },
+  { text: "Think only of the past as its remembrance gives you pleasure.", author: "Jane Austen", source: "Pride and Prejudice" },
+  { text: "Friendship is certainly the finest balm.", author: "Jane Austen", source: "Northanger Abbey" },
+  { text: "Never put off till tomorrow what you can do today.", author: "Charles Dickens", source: "David Copperfield" },
+  { text: "Take nothing on its looks; take everything on evidence.", author: "Charles Dickens", source: "Great Expectations" },
+  { text: "Reflect upon your present blessings.", author: "Charles Dickens", source: "A Christmas Carol" },
+  { text: "Trust thyself: every heart vibrates to that iron string.", author: "Ralph Waldo Emerson", source: "Self-Reliance" },
+  { text: "Nothing can bring you peace but yourself.", author: "Ralph Waldo Emerson", source: "Self-Reliance" },
+  { text: "Simplify, simplify.", author: "Henry David Thoreau", source: "Walden" },
+  { text: "The price of anything is the amount of life you exchange for it.", author: "Henry David Thoreau", source: "Walden" },
+  { text: "Waste no more time disputing what a good man should be. Be one.", author: "Marcus Aurelius", source: "Meditations" },
+  { text: "Look within. Within is the fountain of good.", author: "Marcus Aurelius", source: "Meditations" },
+  { text: "Some things are in our control and others not.", author: "Epictetus", source: "The Enchiridion" },
+  { text: "The cautious seldom err.", author: "Confucius", source: "The Analects" },
+  { text: "To be fond of learning is to be near to knowledge.", author: "Confucius", source: "The Analects" },
+  { text: "The journey of a thousand li commenced with a single step.", author: "Lao Tzu", source: "Tao Te Ching" },
+  { text: "Well done is better than well said.", author: "Benjamin Franklin", source: "Poor Richard's Almanack" },
+  { text: "Diligence is the mother of good luck.", author: "Benjamin Franklin", source: "Poor Richard's Almanack" },
+  { text: "Lost time is never found again.", author: "Benjamin Franklin", source: "The Autobiography of Benjamin Franklin" },
+  { text: "Begin at the beginning.", author: "Lewis Carroll", source: "Alice's Adventures in Wonderland" },
+  { text: "It's no use going back to yesterday.", author: "Lewis Carroll", source: "Alice's Adventures in Wonderland" },
+  { text: "Tomorrow is a new day with no mistakes in it yet.", author: "L. M. Montgomery", source: "Anne of Green Gables" },
+  { text: "Watch and pray, dear, never get tired of trying.", author: "Louisa May Alcott", source: "Little Women" },
+  { text: "He that is down need fear no fall.", author: "John Bunyan", source: "The Pilgrim's Progress" },
+  { text: "We learn from failure, not from success.", author: "Bram Stoker", source: "Dracula" },
+  { text: "Nothing is so painful to the human mind as a great and sudden change.", author: "Mary Shelley", source: "Frankenstein" },
+  { text: "I'll go to it laughing.", author: "Herman Melville", source: "Moby-Dick" },
+  { text: "It is never too late to be wise.", author: "Daniel Defoe", source: "Robinson Crusoe" },
+  { text: "Diligence is the mother of good fortune.", author: "Miguel de Cervantes", source: "Don Quixote" },
+  { text: "To strive, to seek, to find, and not to yield.", author: "Alfred, Lord Tennyson", source: "Ulysses" },
+  { text: "Let us, then, be up and doing.", author: "Henry Wadsworth Longfellow", source: "A Psalm of Life" },
+  { text: "Energy is eternal delight.", author: "William Blake", source: "The Marriage of Heaven and Hell" },
+  { text: "The mind is its own place.", author: "John Milton", source: "Paradise Lost" },
+  { text: "I am large, I contain multitudes.", author: "Walt Whitman", source: "Leaves of Grass" },
+  { text: "Excellence is to do a common thing in an uncommon way.", author: "Booker T. Washington", source: "Up from Slavery" },
+  { text: "The world is full of obvious things.", author: "Arthur Conan Doyle", source: "The Hound of the Baskervilles" },
+  { text: "There is nothing like staying at home for real comfort.", author: "Jane Austen", source: "Emma" },
+  { text: "A faithful friend is a strong defence.", author: "The Apocrypha", source: "Ecclesiasticus" },
+  { text: "A soft answer turneth away wrath.", author: "King James Bible", source: "Proverbs" },
+  { text: "The soul should always stand ajar.", author: "Emily Dickinson", source: "Poems" },
+  { text: "Hope is the thing with feathers.", author: "Emily Dickinson", source: "Poems" },
+];
 const cloudClient = globalThis.supabase?.createClient(supabaseUrl, supabasePublishableKey);
 
 const state = {
@@ -54,8 +106,12 @@ const elements = {
   loginButton: document.querySelector("#loginButton"),
   signupButton: document.querySelector("#signupButton"),
   authNotice: document.querySelector("#authNotice"),
+  authQuoteText: document.querySelector("#authQuoteText"),
+  authQuoteSource: document.querySelector("#authQuoteSource"),
   appShell: document.querySelector("#appShell"),
   currentUserText: document.querySelector("#currentUserText"),
+  topbarQuoteText: document.querySelector("#topbarQuoteText"),
+  topbarQuoteSource: document.querySelector("#topbarQuoteSource"),
   logoutButton: document.querySelector("#logoutButton"),
   prospectsTabButton: document.querySelector("#prospectsTabButton"),
   unitsTabButton: document.querySelector("#unitsTabButton"),
@@ -1477,6 +1533,46 @@ function debounce(callback, delay = 140) {
       callback(...args);
     }, delay);
   };
+}
+
+function quoteIndexForEvent(storageKey, excludeIndex = -1) {
+  let previousIndex = -1;
+  try {
+    const storedIndex = localStorage.getItem(storageKey);
+    previousIndex = storedIndex === null ? -1 : Number(storedIndex);
+  } catch {
+    previousIndex = -1;
+  }
+
+  let index = Math.floor(Math.random() * dailyQuotes.length);
+
+  if (dailyQuotes.length > 1 && (index === previousIndex || index === excludeIndex)) {
+    index = (index + 1) % dailyQuotes.length;
+  }
+
+  try {
+    localStorage.setItem(storageKey, String(index));
+  } catch {
+    // Quote rotation still works without browser storage; it just cannot avoid the previous quote.
+  }
+
+  return index;
+}
+
+function renderQuote(textElement, sourceElement, quote) {
+  if (!textElement || !sourceElement || !quote) {
+    return;
+  }
+
+  textElement.textContent = `“${quote.text}”`;
+  sourceElement.textContent = `${quote.author} · ${quote.source}`;
+}
+
+function renderDailyQuotes() {
+  const authIndex = quoteIndexForEvent("tenantProspectCrmAuthQuoteIndex");
+  const topbarIndex = quoteIndexForEvent("tenantProspectCrmTopbarQuoteIndex", authIndex);
+  renderQuote(elements.authQuoteText, elements.authQuoteSource, dailyQuotes[authIndex]);
+  renderQuote(elements.topbarQuoteText, elements.topbarQuoteSource, dailyQuotes[topbarIndex]);
 }
 
 function setNotice(message) {
@@ -3263,6 +3359,7 @@ async function handleLogin(formData) {
 
   state.session = data.session;
   state.currentUser = data.user;
+  renderDailyQuotes();
   await refreshAppData();
   setButtonBusy(elements.loginButton, false);
 }
@@ -3295,6 +3392,7 @@ async function handleSignup() {
   if (data.session && data.user) {
     state.session = data.session;
     state.currentUser = data.user;
+    renderDailyQuotes();
     await refreshAppData();
     setButtonBusy(elements.signupButton, false);
     return;
@@ -3521,6 +3619,8 @@ async function deleteTradeCategory(categoryId, categoryName) {
 }
 
 async function initializeApp() {
+  renderDailyQuotes();
+
   if (!cloudClient) {
     showSignedOut("Supabase could not load. Check your internet connection and refresh.");
     return;
