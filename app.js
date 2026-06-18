@@ -8,8 +8,6 @@ const tradeCategoryStorageKey = "tenantProspectCrmTradeCategories";
 const defaultInteractionNotice = "Timestamp added automatically. Attachments up to 10 MB.";
 const defaultUnitDocumentNotice = "Documents are saved securely in Supabase Storage. Keep files under 10 MB each.";
 const defaultAgentInteractionNotice = "Timestamp added automatically.";
-const storageFullNotice =
-  "This is on screen, but the cloud database could not save it. Check your connection, then update again.";
 const cloudClient = globalThis.supabase?.createClient(supabaseUrl, supabasePublishableKey);
 
 const state = {
@@ -1621,6 +1619,41 @@ function setAgentInteractionNotice(message) {
   }, 3600);
 }
 
+function errorText(error) {
+  return String(error?.message || error || "").trim();
+}
+
+function isNetworkError(error) {
+  return /failed to fetch|network|offline|timeout|load failed|internet|connection/i.test(errorText(error));
+}
+
+function isAuthError(error) {
+  return /jwt|session|auth|token|expired|sign in|login/i.test(errorText(error));
+}
+
+function recoveryMessage(error, fallback, { localChangesVisible = false } = {}) {
+  const message = errorText(error);
+  const prefix = fallback || message || "Something went wrong.";
+
+  if (isAuthError(error)) {
+    return `${prefix} Your session may have expired. Refresh the page and sign in again.`;
+  }
+
+  if (isNetworkError(error)) {
+    return localChangesVisible
+      ? `${prefix} Your changes are still on this screen. Check your connection, then try saving again.`
+      : `${prefix} Check your connection, then try again.`;
+  }
+
+  if (message && message !== prefix) {
+    return `${prefix} ${message}`;
+  }
+
+  return localChangesVisible
+    ? `${prefix} Your changes are still on this screen. Try again.`
+    : prefix;
+}
+
 function formatFileSize(bytes) {
   if (!bytes) {
     return "0 KB";
@@ -1770,7 +1803,7 @@ async function deleteSelectedProspect() {
     const { error } = await cloudClient.from("prospects").delete().eq("id", prospect.id);
 
     if (error) {
-      setNotice(error.message);
+      setNotice(recoveryMessage(error, "Could not delete prospect."));
       return;
     }
   }
@@ -1804,7 +1837,7 @@ async function deleteSelectedUnit() {
     const { error } = await cloudClient.from("units").delete().eq("id", unit.id);
 
     if (error) {
-      setUnitNotice(error.message);
+      setUnitNotice(recoveryMessage(error, "Could not delete unit."));
       return;
     }
   }
@@ -1831,7 +1864,7 @@ async function deleteSelectedAgent() {
     const { error } = await cloudClient.from("agents").delete().eq("id", agent.id);
 
     if (error) {
-      setAgentNotice(error.message);
+      setAgentNotice(recoveryMessage(error, "Could not delete agent."));
       return;
     }
   }
@@ -1871,7 +1904,7 @@ async function updateSelectedProspect(formData) {
   } catch (error) {
     setButtonBusy(elements.saveProspectButton, false);
     render();
-    setNotice(error.message || storageFullNotice);
+    setNotice(recoveryMessage(error, "Could not save prospect.", { localChangesVisible: true }));
     return;
   }
 
@@ -1904,7 +1937,7 @@ async function updateSelectedUnit(formData) {
   } catch (error) {
     setButtonBusy(elements.saveUnitButton, false);
     render();
-    setUnitNotice(error.message || storageFullNotice);
+    setUnitNotice(recoveryMessage(error, "Could not save unit.", { localChangesVisible: true }));
     return;
   }
 
@@ -1939,7 +1972,7 @@ async function updateSelectedAgent(formData) {
   } catch (error) {
     setButtonBusy(elements.saveAgentButton, false);
     render();
-    setAgentNotice(error.message || storageFullNotice);
+    setAgentNotice(recoveryMessage(error, "Could not save agent.", { localChangesVisible: true }));
     return;
   }
 
@@ -2007,7 +2040,7 @@ async function addInteraction(note, file) {
   } catch (error) {
     await deleteCloudFile(attachment?.path);
     setButtonBusy(submitButton, false);
-    setInteractionNotice(error.message || "Attachment could not be saved.");
+    setInteractionNotice(recoveryMessage(error, "Interaction could not be saved."));
     return;
   }
 
@@ -2084,7 +2117,7 @@ async function saveUnitDocuments() {
     const message =
       error.message === "file-too-large"
         ? `One file is too large. Please choose files under ${formatFileSize(maxAttachmentSize)} each.`
-        : "Those files could not be saved.";
+        : recoveryMessage(error, "Those files could not be saved.");
     setButtonBusy(submitButton, false);
     setUnitDocumentNotice(message);
     return;
@@ -2127,7 +2160,7 @@ async function addAgentInteraction(note) {
 
   if (error) {
     setButtonBusy(submitButton, false);
-    setAgentInteractionNotice(error.message);
+    setAgentInteractionNotice(recoveryMessage(error, "Note could not be saved."));
     return;
   }
 
@@ -2141,7 +2174,7 @@ async function addAgentInteraction(note) {
     await upsertAgentToCloud(agent);
   } catch (upsertError) {
     setButtonBusy(submitButton, false);
-    setAgentInteractionNotice(upsertError.message || storageFullNotice);
+    setAgentInteractionNotice(recoveryMessage(upsertError, "Note was added, but the agent could not be updated.", { localChangesVisible: true }));
     return;
   }
 
@@ -2167,7 +2200,7 @@ async function deleteAgentInteraction(interactionId) {
   const { error } = await cloudClient.from("agent_interactions").delete().eq("id", interactionId);
 
   if (error) {
-    setAgentInteractionNotice(error.message);
+    setAgentInteractionNotice(recoveryMessage(error, "Could not delete note."));
     return;
   }
 
@@ -2222,7 +2255,7 @@ async function deleteUnitDocument(type, documentId) {
     const { error } = await cloudClient.from("unit_documents").delete().eq("id", removedAttachment.id);
 
     if (error) {
-      setUnitDocumentNotice(error.message);
+      setUnitDocumentNotice(recoveryMessage(error, "Could not delete file."));
       return;
     }
 
@@ -2256,7 +2289,7 @@ async function deleteInteraction(interactionId) {
   const { error } = await cloudClient.from("prospect_interactions").delete().eq("id", interactionId);
 
   if (error) {
-    setInteractionNotice(error.message);
+    setInteractionNotice(recoveryMessage(error, "Could not delete interaction."));
     return;
   }
 
@@ -3118,22 +3151,22 @@ async function loadCurrentProfile() {
 async function loadAllCloudData() {
   const tasks = [
     loadCloudSection("isLoadingTradeCategories", loadTradeCategories, (error) => {
-      setTradeCategoryNotice(error.message || "Could not load trade categories.");
+      setTradeCategoryNotice(recoveryMessage(error, "Could not load trade categories."));
     }),
     loadCloudSection("isLoadingProspects", loadProspects, (error) => {
-      setNotice(error.message || "Could not load prospects.");
+      setNotice(recoveryMessage(error, "Could not load prospects."));
     }),
     loadCloudSection("isLoadingUnits", loadUnits, (error) => {
-      setUnitNotice(error.message || "Could not load units.");
+      setUnitNotice(recoveryMessage(error, "Could not load units."));
     }),
     loadCloudSection("isLoadingAgents", loadAgents, (error) => {
-      setAgentNotice(error.message || "Could not load agents.");
+      setAgentNotice(recoveryMessage(error, "Could not load agents."));
     }),
   ];
 
   if (state.currentProfile?.role === "admin") {
     tasks.push(loadCloudSection("isLoadingUsers", loadUsers, (error) => {
-      setNoticeText(elements.adminNotice, error.message || "Could not load users.");
+      setNoticeText(elements.adminNotice, recoveryMessage(error, "Could not load users."));
     }));
   }
 
@@ -3210,7 +3243,7 @@ async function refreshAppData() {
     });
   } catch (error) {
     elements.appShell.classList.remove("is-loading-app");
-    showSignedOut(error.message || "Could not load the CRM.");
+    showSignedOut(recoveryMessage(error, "Could not load the CRM."));
   }
 }
 
@@ -3224,7 +3257,7 @@ async function handleLogin(formData) {
 
   if (error) {
     setButtonBusy(elements.loginButton, false);
-    setNoticeText(elements.authNotice, error.message);
+    setNoticeText(elements.authNotice, recoveryMessage(error, "Could not sign in."));
     return;
   }
 
@@ -3255,7 +3288,7 @@ async function handleSignup() {
 
   if (error) {
     setButtonBusy(elements.signupButton, false);
-    setNoticeText(elements.authNotice, error.message);
+    setNoticeText(elements.authNotice, recoveryMessage(error, "Could not create account."));
     return;
   }
 
@@ -3320,7 +3353,7 @@ async function inviteUser(formData) {
     await loadUsers();
     renderUsers();
   } catch (error) {
-    setNoticeText(elements.adminNotice, error.message || "Could not invite user.");
+    setNoticeText(elements.adminNotice, recoveryMessage(error, "Could not invite user."));
   } finally {
     setButtonBusy(submitButton, false);
   }
@@ -3347,7 +3380,7 @@ async function updateUserAccess(payload, button = null) {
     await loadUsers();
     renderUsers();
   } catch (error) {
-    setNoticeText(elements.adminNotice, error.message || "Could not update user.");
+    setNoticeText(elements.adminNotice, recoveryMessage(error, "Could not update user."));
   } finally {
     setButtonBusy(button, false);
   }
@@ -3405,7 +3438,7 @@ async function addTradeCategory(formData) {
     setTradeCategoryNotice("Trade category added.");
   } catch (error) {
     const isDuplicate = error.code === "23505" || /duplicate/i.test(error.message || "");
-    setTradeCategoryNotice(isDuplicate ? "That category already exists." : error.message || "Could not save category.");
+    setTradeCategoryNotice(isDuplicate ? "That category already exists." : recoveryMessage(error, "Could not save category."));
   } finally {
     setButtonBusy(submitButton, false);
   }
@@ -3450,7 +3483,7 @@ async function updateTradeCategoryStatus(categoryId, isActive) {
     refreshTradeCategoryUi();
     setTradeCategoryNotice(isActive ? "Trade category reactivated." : "Trade category deactivated.");
   } catch (error) {
-    setTradeCategoryNotice(error.message || "Could not update category.");
+    setTradeCategoryNotice(recoveryMessage(error, "Could not update category."));
   }
 }
 
@@ -3483,7 +3516,7 @@ async function deleteTradeCategory(categoryId, categoryName) {
     refreshTradeCategoryUi();
     setTradeCategoryNotice("Trade category deleted.");
   } catch (error) {
-    setTradeCategoryNotice(error.message || "Could not delete category.");
+    setTradeCategoryNotice(recoveryMessage(error, "Could not delete category."));
   }
 }
 
@@ -4055,8 +4088,8 @@ function importCsvFile(file) {
       setImportNotice(
         `Imported ${result.addedCount} new, updated ${result.updatedCount}, added ${result.interactionCount} interactions.`,
       );
-    } catch {
-      setImportNotice("That CSV could not be imported.");
+    } catch (error) {
+      setImportNotice(recoveryMessage(error, "That CSV could not be imported."));
     } finally {
       setButtonBusy(elements.importCsvButton, false);
       elements.csvFileInput.value = "";
@@ -4097,8 +4130,8 @@ function importUnitsCsvFile(file) {
       await saveUnits();
       render();
       setUnitImportNotice(`Imported ${result.addedCount} new units and updated ${result.updatedCount}.`);
-    } catch {
-      setUnitImportNotice("That unit CSV could not be imported.");
+    } catch (error) {
+      setUnitImportNotice(recoveryMessage(error, "That unit CSV could not be imported."));
     } finally {
       setButtonBusy(elements.importUnitsCsvButton, false);
       elements.unitCsvFileInput.value = "";
@@ -4141,8 +4174,8 @@ function importAgentsCsvFile(file) {
       setAgentImportNotice(
         `Imported ${result.addedCount} new, updated ${result.updatedCount}, added ${result.interactionCount} notes.`,
       );
-    } catch {
-      setAgentImportNotice("That agent CSV could not be imported.");
+    } catch (error) {
+      setAgentImportNotice(recoveryMessage(error, "That agent CSV could not be imported."));
     } finally {
       setButtonBusy(elements.importAgentsCsvButton, false);
       elements.agentCsvFileInput.value = "";
