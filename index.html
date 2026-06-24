@@ -86,23 +86,27 @@
               <div class="filter-grid" aria-label="Prospect filters">
                 <label>
                   <span>Contacted on</span>
-                  <input id="contactDateInput" type="text" inputmode="numeric" maxlength="10" placeholder="DD-MM-YYYY" />
+                  <input id="contactDateInput" type="text" inputmode="numeric" maxlength="10" placeholder="DD-MM-YYYY" aria-describedby="contactDateHelp" />
+                  <p class="field-helper" id="contactDateHelp">Use DD-MM-YYYY.</p>
                 </label>
                 <label>
                   <span>Year</span>
                   <input id="contactYearInput" type="number" min="1900" max="2100" inputmode="numeric" placeholder="2026" />
+                  <p class="field-helper field-helper-placeholder" aria-hidden="true"></p>
                 </label>
                 <label>
                   <span>Trade</span>
                   <select id="tradeFilterInput">
                     <option value="">All trades</option>
                   </select>
+                  <p class="field-helper field-helper-placeholder" aria-hidden="true"></p>
                 </label>
                 <label>
                   <span>Status</span>
                   <select id="statusFilterInput">
                     <option value="">All statuses</option>
                   </select>
+                  <p class="field-helper field-helper-placeholder" aria-hidden="true"></p>
                 </label>
                 <button class="secondary-button compact-button" id="clearFiltersButton" type="button">Clear</button>
               </div>
@@ -296,11 +300,13 @@
                     </label>
                     <label>
                       <span>Last date of operation</span>
-                      <input id="unitLastOperationInput" name="lastOperationDate" type="text" inputmode="numeric" maxlength="10" pattern="\d{2}-\d{2}-\d{4}" placeholder="DD-MM-YYYY" />
+                      <input id="unitLastOperationInput" name="lastOperationDate" type="text" inputmode="numeric" maxlength="10" pattern="\d{2}-\d{2}-\d{4}" placeholder="DD-MM-YYYY" aria-describedby="unitLastOperationHelp" />
+                      <p class="field-helper" id="unitLastOperationHelp">Use DD-MM-YYYY.</p>
                     </label>
                     <label>
                       <span>Available date</span>
-                      <input id="unitAvailableInput" name="availableDate" type="text" inputmode="numeric" maxlength="10" pattern="\d{2}-\d{2}-\d{4}" placeholder="DD-MM-YYYY" />
+                      <input id="unitAvailableInput" name="availableDate" type="text" inputmode="numeric" maxlength="10" pattern="\d{2}-\d{2}-\d{4}" placeholder="DD-MM-YYYY" aria-describedby="unitAvailableHelp" />
+                      <p class="field-helper" id="unitAvailableHelp">Use DD-MM-YYYY.</p>
                     </label>
                     <label>
                       <span>Current price</span>

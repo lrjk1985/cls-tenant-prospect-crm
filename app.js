@@ -144,6 +144,7 @@ const elements = {
   searchInput: document.querySelector("#searchInput"),
   showAllProspectsButton: document.querySelector("#showAllProspectsButton"),
   contactDateInput: document.querySelector("#contactDateInput"),
+  contactDateHelp: document.querySelector("#contactDateHelp"),
   contactYearInput: document.querySelector("#contactYearInput"),
   tradeFilterInput: document.querySelector("#tradeFilterInput"),
   statusFilterInput: document.querySelector("#statusFilterInput"),
@@ -190,7 +191,9 @@ const elements = {
   unitNumberInput: document.querySelector("#unitNumberInput"),
   unitPsfInput: document.querySelector("#unitPsfInput"),
   unitLastOperationInput: document.querySelector("#unitLastOperationInput"),
+  unitLastOperationHelp: document.querySelector("#unitLastOperationHelp"),
   unitAvailableInput: document.querySelector("#unitAvailableInput"),
+  unitAvailableHelp: document.querySelector("#unitAvailableHelp"),
   unitCurrentPriceInput: document.querySelector("#unitCurrentPriceInput"),
   unitMarketPriceInput: document.querySelector("#unitMarketPriceInput"),
   unitSavedNotice: document.querySelector("#unitSavedNotice"),
@@ -1038,6 +1041,39 @@ function parseDisplayDate(value) {
     String(month).padStart(2, "0"),
     String(day).padStart(2, "0"),
   ].join("-");
+}
+
+function setDateFieldValidity(input, helper, options = {}) {
+  if (!input) {
+    return { isValid: true, parsedDate: "" };
+  }
+
+  const cleanValue = String(input.value || "").trim();
+  const parsedDate = parseDisplayDate(cleanValue);
+  const isRequired = options.required === true;
+  const isValid = cleanValue ? Boolean(parsedDate) : !isRequired;
+  const helperText = options.helperText || "Use DD-MM-YYYY.";
+  const errorText = options.errorText || "Enter a valid date as DD-MM-YYYY.";
+
+  input.classList.toggle("field-invalid", !isValid);
+  input.setAttribute("aria-invalid", String(!isValid));
+
+  if (helper) {
+    helper.textContent = isValid ? helperText : errorText;
+    helper.classList.toggle("field-helper-error", !isValid);
+  }
+
+  return { isValid, parsedDate };
+}
+
+function normalizeDateInput(input, helper, options = {}) {
+  const result = setDateFieldValidity(input, helper, options);
+
+  if (result.isValid && result.parsedDate && input) {
+    input.value = formatDateForDisplay(result.parsedDate);
+  }
+
+  return result;
 }
 
 function formatYear(isoDate) {
@@ -2016,11 +2052,23 @@ async function updateSelectedUnit(formData) {
     return;
   }
 
+  const lastOperationDate = setDateFieldValidity(elements.unitLastOperationInput, elements.unitLastOperationHelp);
+  const availableDate = setDateFieldValidity(elements.unitAvailableInput, elements.unitAvailableHelp);
+
+  if (!lastOperationDate.isValid || !availableDate.isValid) {
+    const firstInvalidField = !lastOperationDate.isValid
+      ? elements.unitLastOperationInput
+      : elements.unitAvailableInput;
+    firstInvalidField.focus();
+    setUnitNotice("Check the highlighted date fields before saving.");
+    return;
+  }
+
   setButtonBusy(elements.saveUnitButton, true, "Saving...");
   unit.number = formData.get("number").toString().trim() || "Unnamed unit";
   unit.pricePerSqft = formData.get("pricePerSqft").toString().trim();
-  unit.lastOperationDate = parseDisplayDate(formData.get("lastOperationDate")) || "";
-  unit.availableDate = parseDisplayDate(formData.get("availableDate")) || "";
+  unit.lastOperationDate = lastOperationDate.parsedDate || "";
+  unit.availableDate = availableDate.parsedDate || "";
   unit.currentPrice = formData.get("currentPrice").toString().trim();
   unit.marketPrice = formData.get("marketPrice").toString().trim();
   unit.isDraft = false;
@@ -2642,6 +2690,8 @@ function renderUnitForm(unit) {
   elements.unitMarketPriceInput.value = unit.marketPrice || "";
   elements.saveUnitButton.textContent = unit.isDraft ? "Save Unit" : "Update Unit";
   renderRecordAttribution(elements.unitForm, unit);
+  setDateFieldValidity(elements.unitLastOperationInput, elements.unitLastOperationHelp);
+  setDateFieldValidity(elements.unitAvailableInput, elements.unitAvailableHelp);
 }
 
 function createDocumentCard(title, attachment, deleteType) {
@@ -2996,6 +3046,10 @@ function renderTabs() {
   elements.unitsTabButton.setAttribute("aria-selected", String(showingUnits));
   elements.agentsTabButton.setAttribute("aria-selected", String(showingAgents));
   elements.adminTabButton.setAttribute("aria-selected", String(showingAdmin));
+  elements.prospectsTabButton.tabIndex = showingProspects ? 0 : -1;
+  elements.unitsTabButton.tabIndex = showingUnits ? 0 : -1;
+  elements.agentsTabButton.tabIndex = showingAgents ? 0 : -1;
+  elements.adminTabButton.tabIndex = showingAdmin ? 0 : -1;
   elements.prospectsTabPanel.classList.toggle("hidden", !showingProspects);
   elements.unitsTabPanel.classList.toggle("hidden", !showingUnits);
   elements.agentsTabPanel.classList.toggle("hidden", !showingAgents);
@@ -3040,6 +3094,46 @@ function setActiveTab(tab) {
 
   state.activeTab = tab;
   render();
+}
+
+function tabButtonEntries() {
+  return [
+    { tab: "prospects", button: elements.prospectsTabButton },
+    { tab: "units", button: elements.unitsTabButton },
+    { tab: "agents", button: elements.agentsTabButton },
+    { tab: "admin", button: elements.adminTabButton },
+  ].filter((entry) => !entry.button.classList.contains("hidden"));
+}
+
+function handleTabKeyboard(event, tab) {
+  const entries = tabButtonEntries();
+  const currentIndex = entries.findIndex((entry) => entry.tab === tab);
+  const lastIndex = entries.length - 1;
+  let nextIndex = currentIndex;
+
+  if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+    nextIndex = currentIndex === lastIndex ? 0 : currentIndex + 1;
+  } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+    nextIndex = currentIndex <= 0 ? lastIndex : currentIndex - 1;
+  } else if (event.key === "Home") {
+    nextIndex = 0;
+  } else if (event.key === "End") {
+    nextIndex = lastIndex;
+  } else {
+    return;
+  }
+
+  event.preventDefault();
+  const nextEntry = entries[nextIndex];
+
+  if (!nextEntry) {
+    return;
+  }
+
+  setActiveTab(nextEntry.tab);
+  window.requestAnimationFrame(() => {
+    nextEntry.button.focus();
+  });
 }
 
 function renderAccount() {
@@ -4453,6 +4547,10 @@ elements.prospectsTabButton.addEventListener("click", () => setActiveTab("prospe
 elements.unitsTabButton.addEventListener("click", () => setActiveTab("units"));
 elements.agentsTabButton.addEventListener("click", () => setActiveTab("agents"));
 elements.adminTabButton.addEventListener("click", () => setActiveTab("admin"));
+elements.prospectsTabButton.addEventListener("keydown", (event) => handleTabKeyboard(event, "prospects"));
+elements.unitsTabButton.addEventListener("keydown", (event) => handleTabKeyboard(event, "units"));
+elements.agentsTabButton.addEventListener("keydown", (event) => handleTabKeyboard(event, "agents"));
+elements.adminTabButton.addEventListener("keydown", (event) => handleTabKeyboard(event, "admin"));
 elements.newProspectButton.addEventListener("click", createProspect);
 elements.emptyNewButton.addEventListener("click", createProspect);
 elements.newUnitButton.addEventListener("click", createUnit);
@@ -4539,7 +4637,14 @@ elements.agentSearchInput.addEventListener("input", (event) => {
 });
 
 elements.contactDateInput.addEventListener("input", (event) => {
-  state.contactDate = parseDisplayDate(event.target.value);
+  const result = setDateFieldValidity(event.target, elements.contactDateHelp);
+  state.contactDate = result.isValid ? result.parsedDate : "";
+  renderProspectList();
+});
+
+elements.contactDateInput.addEventListener("blur", () => {
+  const result = normalizeDateInput(elements.contactDateInput, elements.contactDateHelp);
+  state.contactDate = result.isValid ? result.parsedDate : "";
   renderProspectList();
 });
 
@@ -4559,6 +4664,22 @@ elements.statusFilterInput.addEventListener("change", (event) => {
   renderProspectList();
 });
 
+elements.unitLastOperationInput.addEventListener("input", () => {
+  setDateFieldValidity(elements.unitLastOperationInput, elements.unitLastOperationHelp);
+});
+
+elements.unitLastOperationInput.addEventListener("blur", () => {
+  normalizeDateInput(elements.unitLastOperationInput, elements.unitLastOperationHelp);
+});
+
+elements.unitAvailableInput.addEventListener("input", () => {
+  setDateFieldValidity(elements.unitAvailableInput, elements.unitAvailableHelp);
+});
+
+elements.unitAvailableInput.addEventListener("blur", () => {
+  normalizeDateInput(elements.unitAvailableInput, elements.unitAvailableHelp);
+});
+
 elements.clearFiltersButton.addEventListener("click", () => {
   state.searchTerm = "";
   state.contactDate = "";
@@ -4570,6 +4691,7 @@ elements.clearFiltersButton.addEventListener("click", () => {
   elements.contactYearInput.value = "";
   elements.tradeFilterInput.value = "";
   elements.statusFilterInput.value = "";
+  setDateFieldValidity(elements.contactDateInput, elements.contactDateHelp);
   renderProspectList();
 });
 

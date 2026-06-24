@@ -344,7 +344,7 @@ button {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
-  align-items: end;
+  align-items: start;
 }
 
 .compact-button {
@@ -1184,7 +1184,7 @@ body {
 }
 
 .tab-button {
-  min-height: 28px;
+  min-height: 34px;
   border: 1px solid transparent;
   border-radius: 999px;
   color: var(--muted);
@@ -1223,7 +1223,7 @@ body {
 .secondary-button,
 .danger-button,
 .compact-inline-button {
-  min-height: 34px;
+  min-height: 40px;
   border-radius: 999px;
   box-shadow: none;
   font-size: 13px;
@@ -1238,7 +1238,7 @@ body {
 
 .compact-button,
 .compact-inline-button {
-  min-height: 32px;
+  min-height: 36px;
   font-size: 12px;
 }
 
@@ -1275,6 +1275,8 @@ body {
   color: #050505;
   font-size: 12px;
   font-weight: 550;
+  min-height: 32px;
+  padding-inline: 8px;
 }
 
 .topbar-notice {
@@ -1319,8 +1321,13 @@ textarea {
 
 input,
 select {
-  min-height: 34px;
+  min-height: 38px;
   padding: 0 10px;
+}
+
+.editor-panel input,
+.editor-panel select {
+  min-height: 38px;
 }
 
 textarea {
@@ -1352,6 +1359,29 @@ label span,
   color: var(--muted);
   font-size: 11px;
   font-weight: 550;
+}
+
+.field-helper {
+  min-height: 15px;
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.field-helper-error {
+  color: var(--red);
+}
+
+.field-helper-placeholder {
+  visibility: hidden;
+}
+
+input.field-invalid,
+select.field-invalid,
+textarea.field-invalid {
+  border-color: var(--red);
+  box-shadow: 0 0 0 2px rgba(211, 59, 59, 0.1);
 }
 
 .stats-row span {
@@ -1513,6 +1543,15 @@ label span,
 
   .topbar-quote {
     max-width: 100%;
+  }
+
+  .primary-button,
+  .secondary-button,
+  .danger-button,
+  .tab-button,
+  input,
+  select {
+    min-height: 44px;
   }
 }
 
