@@ -96,6 +96,8 @@ const defaultAgentLimit = 3;
 const mobileProspectLayoutQuery = window.matchMedia("(max-width: 960px)");
 const uiState = {
   renderFrame: null,
+  confirmResolve: null,
+  confirmReturnFocus: null,
 };
 
 const elements = {
@@ -109,6 +111,11 @@ const elements = {
   authQuoteText: document.querySelector("#authQuoteText"),
   authQuoteSource: document.querySelector("#authQuoteSource"),
   appShell: document.querySelector("#appShell"),
+  confirmDialog: document.querySelector("#confirmDialog"),
+  confirmDialogTitle: document.querySelector("#confirmDialogTitle"),
+  confirmDialogMessage: document.querySelector("#confirmDialogMessage"),
+  confirmCancelButton: document.querySelector("#confirmCancelButton"),
+  confirmDeleteButton: document.querySelector("#confirmDeleteButton"),
   currentUserText: document.querySelector("#currentUserText"),
   topbarQuoteText: document.querySelector("#topbarQuoteText"),
   topbarQuoteSource: document.querySelector("#topbarQuoteSource"),
@@ -1505,6 +1512,49 @@ function setButtonBusy(button, isBusy, busyText = "Working...") {
   button.removeAttribute("aria-busy");
 }
 
+function closeConfirmDialog(confirmed = false) {
+  if (!uiState.confirmResolve) {
+    return;
+  }
+
+  const resolve = uiState.confirmResolve;
+  const returnFocus = uiState.confirmReturnFocus;
+  uiState.confirmResolve = null;
+  uiState.confirmReturnFocus = null;
+  elements.confirmDialog.classList.add("hidden");
+  resolve(confirmed);
+
+  if (returnFocus?.focus) {
+    window.requestAnimationFrame(() => {
+      returnFocus.focus();
+    });
+  }
+}
+
+function confirmDelete({ title, message, confirmLabel = "Delete" }) {
+  if (!elements.confirmDialog) {
+    return Promise.resolve(false);
+  }
+
+  if (uiState.confirmResolve) {
+    closeConfirmDialog(false);
+  }
+
+  uiState.confirmReturnFocus = document.activeElement;
+  elements.confirmDialogTitle.textContent = title;
+  elements.confirmDialogMessage.textContent = message;
+  elements.confirmDeleteButton.textContent = confirmLabel;
+  elements.confirmDialog.classList.remove("hidden");
+
+  window.requestAnimationFrame(() => {
+    elements.confirmCancelButton.focus();
+  });
+
+  return new Promise((resolve) => {
+    uiState.confirmResolve = resolve;
+  });
+}
+
 function markNoticeUpdated(element) {
   if (!element) {
     return;
@@ -1921,7 +1971,11 @@ async function deleteSelectedProspect() {
     return;
   }
 
-  const confirmed = window.confirm(`Delete ${prospect.name || "this prospect"} and all interactions?`);
+  const confirmed = await confirmDelete({
+    title: `Delete ${prospect.name || "this prospect"}?`,
+    message: "This will remove the prospect, all logged interactions, and any attached files. This action cannot be undone.",
+    confirmLabel: "Delete Prospect",
+  });
 
   if (!confirmed) {
     return;
@@ -1952,7 +2006,11 @@ async function deleteSelectedUnit() {
     return;
   }
 
-  const confirmed = window.confirm(`Delete Unit ${unit.number || "this unit"} and its files?`);
+  const confirmed = await confirmDelete({
+    title: `Delete Unit ${unit.number || "this unit"}?`,
+    message: "This will remove the unit and its saved floor plans, M&E files, and photos. This action cannot be undone.",
+    confirmLabel: "Delete Unit",
+  });
 
   if (!confirmed) {
     return;
@@ -1986,7 +2044,11 @@ async function deleteSelectedAgent() {
     return;
   }
 
-  const confirmed = window.confirm(`Delete ${agent.name || "this agent"} and all notes?`);
+  const confirmed = await confirmDelete({
+    title: `Delete ${agent.name || "this agent"}?`,
+    message: "This will remove the agent and all saved notes. This action cannot be undone.",
+    confirmLabel: "Delete Agent",
+  });
 
   if (!confirmed) {
     return;
@@ -2335,7 +2397,11 @@ async function deleteAgentInteraction(interactionId) {
     return;
   }
 
-  const confirmed = window.confirm("Delete this agent note?");
+  const confirmed = await confirmDelete({
+    title: "Delete this agent note?",
+    message: "This note will be removed from the agent timeline. This action cannot be undone.",
+    confirmLabel: "Delete Note",
+  });
 
   if (!confirmed) {
     return;
@@ -2381,6 +2447,16 @@ async function deleteUnitDocument(type, documentId) {
     return;
   }
 
+  const confirmed = await confirmDelete({
+    title: "Delete this file?",
+    message: "This file will be removed from the unit documents. This action cannot be undone.",
+    confirmLabel: "Delete File",
+  });
+
+  if (!confirmed) {
+    return;
+  }
+
   unit.documents = unit.documents || createEmptyUnitDocuments();
   let removedAttachment = null;
 
@@ -2422,9 +2498,13 @@ async function deleteInteraction(interactionId) {
 
   const interaction = prospect.interactions.find((item) => item.id === interactionId);
   const confirmationMessage = interaction?.attachment
-    ? "Delete this interaction and its attachment?"
-    : "Delete this interaction?";
-  const confirmed = window.confirm(confirmationMessage);
+    ? "This will remove the interaction and its attachment. This action cannot be undone."
+    : "This interaction will be removed from the timeline. This action cannot be undone.";
+  const confirmed = await confirmDelete({
+    title: "Delete this interaction?",
+    message: confirmationMessage,
+    confirmLabel: "Delete Interaction",
+  });
 
   if (!confirmed) {
     return;
@@ -3136,6 +3216,34 @@ function handleTabKeyboard(event, tab) {
   });
 }
 
+function handleConfirmDialogKeydown(event) {
+  if (elements.confirmDialog.classList.contains("hidden")) {
+    return;
+  }
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeConfirmDialog(false);
+    return;
+  }
+
+  if (event.key !== "Tab") {
+    return;
+  }
+
+  const focusable = [elements.confirmCancelButton, elements.confirmDeleteButton];
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
 function renderAccount() {
   const email = state.currentUser?.email || "";
   const role = state.currentProfile?.role ? ` · ${state.currentProfile.role}` : "";
@@ -3684,9 +3792,11 @@ async function deleteTradeCategory(categoryId, categoryName) {
     return;
   }
 
-  const confirmed = window.confirm(
-    `Delete "${categoryName}" from Trade Categories? Existing prospects with this trade will keep their saved text, but this category will be removed from future dropdowns.`,
-  );
+  const confirmed = await confirmDelete({
+    title: `Delete "${categoryName}"?`,
+    message: "Existing prospects with this trade will keep their saved text, but this category will be removed from future dropdowns.",
+    confirmLabel: "Delete Category",
+  });
 
   if (!confirmed) {
     return;
@@ -4542,6 +4652,15 @@ function exportAgentsCsv() {
     "text/csv;charset=utf-8",
   );
 }
+
+elements.confirmCancelButton.addEventListener("click", () => closeConfirmDialog(false));
+elements.confirmDeleteButton.addEventListener("click", () => closeConfirmDialog(true));
+elements.confirmDialog.addEventListener("click", (event) => {
+  if (event.target === elements.confirmDialog) {
+    closeConfirmDialog(false);
+  }
+});
+elements.confirmDialog.addEventListener("keydown", handleConfirmDialogKeydown);
 
 elements.prospectsTabButton.addEventListener("click", () => setActiveTab("prospects"));
 elements.unitsTabButton.addEventListener("click", () => setActiveTab("units"));

@@ -539,6 +539,18 @@
       </section>
     </main>
 
+    <div class="modal-backdrop hidden" id="confirmDialog" role="dialog" aria-modal="true" aria-labelledby="confirmDialogTitle" aria-describedby="confirmDialogMessage">
+      <section class="confirm-dialog" tabindex="-1">
+        <p class="eyebrow">Confirm delete</p>
+        <h2 id="confirmDialogTitle">Delete item?</h2>
+        <p id="confirmDialogMessage">This action cannot be undone.</p>
+        <div class="confirm-dialog-actions">
+          <button class="secondary-button" id="confirmCancelButton" type="button">Cancel</button>
+          <button class="danger-button" id="confirmDeleteButton" type="button">Delete</button>
+        </div>
+      </section>
+    </div>
+
     <template id="prospectItemTemplate">
       <button class="prospect-item" type="button" role="listitem">
         <span class="prospect-main">

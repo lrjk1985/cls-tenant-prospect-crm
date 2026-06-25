@@ -1101,23 +1101,27 @@ label span {
 
 /* Oculus-inspired visual refresh: calmer palette, lighter type, flatter surfaces. */
 :root {
-  --bg: #f4f4f4;
+  --bg: #f3f4f6;
   --surface: #ffffff;
-  --surface-soft: #f8f8f8;
-  --ink: #050505;
-  --muted: #747474;
-  --line: #dedede;
+  --surface-soft: #f8fafc;
+  --ink: #111827;
+  --muted: #667085;
+  --line: #e5e7eb;
   --mv-coral: #ffffff;
-  --mv-purple: #747474;
-  --mv-magenta: #050505;
-  --mv-black: #050505;
+  --mv-purple: #667085;
+  --mv-magenta: #111827;
+  --mv-black: #111827;
   --mv-white: #ffffff;
-  --teal: #050505;
-  --teal-dark: #2b2b2b;
-  --amber: #2b74ff;
-  --red: #d33b3b;
-  --focus: #050505;
-  --shadow: none;
+  --teal: #111827;
+  --teal-dark: #1f2937;
+  --amber: #2563eb;
+  --red: #b42318;
+  --focus: #2563eb;
+  --shadow: 0 18px 50px rgba(17, 24, 39, 0.08);
+  --accent-blue: #2563eb;
+  --accent-blue-dark: #1d4ed8;
+  --accent-blue-soft: #f0f6ff;
+  --accent-blue-line: #bfdbfe;
   --font-body: "Neue Plak", "Helvetica Neue", Helvetica, Arial, ui-sans-serif, system-ui, sans-serif;
   --font-heading: "Neue Plak", "Helvetica Neue", Helvetica, Arial, ui-sans-serif, system-ui, sans-serif;
 }
@@ -1136,8 +1140,8 @@ body {
 .workspace,
 .auth-card {
   border-color: var(--line);
-  border-radius: 0;
-  box-shadow: none;
+  border-radius: 16px;
+  box-shadow: var(--shadow);
 }
 
 .auth-card {
@@ -1147,9 +1151,9 @@ body {
 .topbar {
   min-height: 72px;
   border-bottom: 1px solid var(--line);
-  background: #fff;
+  background: rgba(255, 255, 255, 0.94);
   color: var(--ink);
-  padding: 16px 20px;
+  padding: 18px 22px 16px;
 }
 
 .topbar h1 {
@@ -1193,9 +1197,9 @@ body {
 }
 
 .tab-button.active {
-  border-color: #050505;
-  background: #fff;
-  color: #050505;
+  border-color: var(--accent-blue-line);
+  background: var(--accent-blue-soft);
+  color: var(--accent-blue-dark);
 }
 
 .account-strip {
@@ -1243,26 +1247,27 @@ body {
 }
 
 .primary-button {
-  border-color: #050505;
-  background: #050505;
+  border-color: var(--accent-blue);
+  background: var(--accent-blue);
   color: #fff;
 }
 
 .primary-button:hover {
-  background: #2b2b2b;
+  border-color: var(--accent-blue-dark);
+  background: var(--accent-blue-dark);
 }
 
 .secondary-button,
 .topbar .secondary-button {
-  border-color: #c9c9c9;
+  border-color: #d0d5dd;
   background: #fff;
-  color: #050505;
+  color: var(--ink);
 }
 
 .secondary-button:hover,
 .topbar .secondary-button:hover {
-  border-color: #050505;
-  color: #050505;
+  border-color: var(--accent-blue-line);
+  color: var(--accent-blue-dark);
 }
 
 .danger-button {
@@ -1272,7 +1277,7 @@ body {
 }
 
 .link-button {
-  color: #050505;
+  color: var(--ink);
   font-size: 12px;
   font-weight: 550;
   min-height: 32px;
@@ -1350,8 +1355,8 @@ input:focus,
 select:focus,
 textarea:focus,
 button:focus-visible {
-  border-color: #050505;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+  border-color: var(--focus);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
 }
 
 label span,
@@ -1385,7 +1390,7 @@ textarea.field-invalid {
 }
 
 .stats-row span {
-  color: #050505;
+  color: var(--ink);
   font-size: 20px;
   font-weight: 650;
 }
@@ -1407,12 +1412,12 @@ textarea.field-invalid {
 
 .prospect-item:hover,
 .prospect-item.active {
-  border-color: #050505;
+  border-color: var(--accent-blue-line);
 }
 
 .prospect-item.active {
-  background: #fff;
-  box-shadow: inset 3px 0 0 #050505;
+  background: #fbfdff;
+  box-shadow: inset 3px 0 0 var(--accent-blue);
 }
 
 .prospect-main strong {
@@ -1435,18 +1440,18 @@ textarea.field-invalid {
 .prospect-meta span,
 .status-pill,
 .category-pill {
-  border: 1px solid #c9c9c9;
+  border: 1px solid #d0d5dd;
   border-radius: 999px;
   background: #fff;
-  color: #050505;
+  color: var(--ink);
   font-size: 11px;
   font-weight: 550;
 }
 
 .prospect-item.active .prospect-meta span {
-  border-color: #cfe0ff;
-  background: #eaf1ff;
-  color: #1e5dd8;
+  border-color: var(--accent-blue-line);
+  background: var(--accent-blue-soft);
+  color: var(--accent-blue-dark);
 }
 
 .detail-pane {
@@ -1528,6 +1533,51 @@ textarea.field-invalid {
   color: var(--muted);
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: rgba(17, 24, 39, 0.44);
+  padding: 24px;
+}
+
+.modal-backdrop.hidden {
+  display: none;
+}
+
+.confirm-dialog {
+  width: min(420px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(17, 24, 39, 0.18);
+  padding: 22px;
+  outline: none;
+  animation: crm-modal-in var(--motion-medium, 260ms) var(--motion-ease-out, cubic-bezier(0.16, 1, 0.3, 1)) both;
+}
+
+.confirm-dialog h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.confirm-dialog p:not(.eyebrow) {
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
 @media (max-width: 640px) {
   .app-shell {
     padding: 0;
@@ -1552,6 +1602,20 @@ textarea.field-invalid {
   input,
   select {
     min-height: 44px;
+  }
+
+  .modal-backdrop {
+    align-items: end;
+    padding: 14px;
+  }
+
+  .confirm-dialog {
+    border-radius: 14px;
+  }
+
+  .confirm-dialog-actions {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1855,6 +1919,17 @@ textarea:focus {
   100% {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes crm-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
