@@ -8,6 +8,23 @@ const tradeCategoryStorageKey = "tenantProspectCrmTradeCategories";
 const defaultInteractionNotice = "Timestamp added automatically. Attachments up to 10 MB.";
 const defaultUnitDocumentNotice = "Documents are saved securely in Supabase Storage. Keep files under 10 MB each.";
 const defaultAgentInteractionNotice = "Timestamp added automatically.";
+const defaultDocumentNotice = "Set up the Supabase document tables and Edge Functions before generating Word documents.";
+const documentTypeLabels = {
+  quotation: "Quotation",
+  letter_of_offer: "Letter of Offer",
+  lease_agreement: "Lease Agreement",
+};
+const documentStatusLabels = {
+  draft: "Draft",
+  ai_review_required: "AI Review Required",
+  missing_information: "Missing Information",
+  ready_to_generate: "Ready to Generate",
+  generated: "Generated",
+  revision_requested: "Revision Requested",
+  approved: "Approved",
+  sent: "Sent",
+  cancelled: "Cancelled",
+};
 const dailyQuotes = [
   { text: "Brevity is the soul of wit.", author: "William Shakespeare", source: "Hamlet" },
   { text: "Sweet are the uses of adversity.", author: "William Shakespeare", source: "As You Like It" },
@@ -67,6 +84,7 @@ const state = {
   prospects: [],
   units: [],
   agents: [],
+  documentRequests: [],
   users: [],
   tradeCategories: readStoredTradeCategories(),
   session: null,
@@ -75,18 +93,31 @@ const state = {
   selectedId: null,
   selectedUnitId: null,
   selectedAgentId: null,
+  selectedDocumentRequestId: null,
   searchTerm: "",
   unitSearchTerm: "",
   agentSearchTerm: "",
+  documentSearchTerm: "",
   contactDate: "",
   contactYear: "",
   tradeFilter: "",
   statusFilter: "",
+  documentTypeFilter: "",
+  documentStatusFilter: "",
+  documentLoadError: "",
+  draftDocumentType: "letter_of_offer",
+  draftDocumentSourceType: "ai_request",
+  draftDocumentRequestText: "",
+  documentAnalysis: null,
   showAllProspects: false,
   showAllAgents: false,
+  hasLoadedDocuments: false,
+  isCreatingDocument: false,
+  isAnalyzingDocument: false,
   isLoadingProspects: false,
   isLoadingUnits: false,
   isLoadingAgents: false,
+  isLoadingDocuments: false,
   isLoadingTradeCategories: false,
   isLoadingUsers: false,
 };
@@ -123,20 +154,49 @@ const elements = {
   prospectsTabButton: document.querySelector("#prospectsTabButton"),
   unitsTabButton: document.querySelector("#unitsTabButton"),
   agentsTabButton: document.querySelector("#agentsTabButton"),
+  documentsTabButton: document.querySelector("#documentsTabButton"),
   adminTabButton: document.querySelector("#adminTabButton"),
   prospectsTabPanel: document.querySelector("#prospectsTabPanel"),
   unitsTabPanel: document.querySelector("#unitsTabPanel"),
   agentsTabPanel: document.querySelector("#agentsTabPanel"),
+  documentsTabPanel: document.querySelector("#documentsTabPanel"),
   adminTabPanel: document.querySelector("#adminTabPanel"),
   prospectTopbarActions: document.querySelector("#prospectTopbarActions"),
   unitTopbarActions: document.querySelector("#unitTopbarActions"),
   agentTopbarActions: document.querySelector("#agentTopbarActions"),
+  documentTopbarActions: document.querySelector("#documentTopbarActions"),
   newProspectButton: document.querySelector("#newProspectButton"),
   emptyNewButton: document.querySelector("#emptyNewButton"),
   newUnitButton: document.querySelector("#newUnitButton"),
   emptyNewUnitButton: document.querySelector("#emptyNewUnitButton"),
   newAgentButton: document.querySelector("#newAgentButton"),
   emptyNewAgentButton: document.querySelector("#emptyNewAgentButton"),
+  newDocumentButton: document.querySelector("#newDocumentButton"),
+  emptyNewDocumentButton: document.querySelector("#emptyNewDocumentButton"),
+  documentNotice: document.querySelector("#documentNotice"),
+  documentSearchInput: document.querySelector("#documentSearchInput"),
+  documentTypeFilterInput: document.querySelector("#documentTypeFilterInput"),
+  documentStatusFilterInput: document.querySelector("#documentStatusFilterInput"),
+  documentRequestCount: document.querySelector("#documentRequestCount"),
+  documentGeneratedCount: document.querySelector("#documentGeneratedCount"),
+  documentRequestList: document.querySelector("#documentRequestList"),
+  documentEmptyState: document.querySelector("#documentEmptyState"),
+  documentDetailContent: document.querySelector("#documentDetailContent"),
+  documentDetailEyebrow: document.querySelector("#documentDetailEyebrow"),
+  documentDetailTitle: document.querySelector("#documentDetailTitle"),
+  documentDetailStatus: document.querySelector("#documentDetailStatus"),
+  documentStarterForm: document.querySelector("#documentStarterForm"),
+  documentTypeInput: document.querySelector("#documentTypeInput"),
+  documentSourceTypeInput: document.querySelector("#documentSourceTypeInput"),
+  documentRequestTextInput: document.querySelector("#documentRequestTextInput"),
+  documentStarterNotice: document.querySelector("#documentStarterNotice"),
+  analyzeDocumentButton: document.querySelector("#analyzeDocumentButton"),
+  generateDocumentButton: document.querySelector("#generateDocumentButton"),
+  documentExtractedFieldsText: document.querySelector("#documentExtractedFieldsText"),
+  documentMissingFieldsText: document.querySelector("#documentMissingFieldsText"),
+  documentRiskFlagsText: document.querySelector("#documentRiskFlagsText"),
+  documentFollowUpQuestionsText: document.querySelector("#documentFollowUpQuestionsText"),
+  documentVersionHistoryText: document.querySelector("#documentVersionHistoryText"),
   importAgentsCsvButton: document.querySelector("#importAgentsCsvButton"),
   agentCsvFileInput: document.querySelector("#agentCsvFileInput"),
   exportAgentsCsvButton: document.querySelector("#exportAgentsCsvButton"),
@@ -412,6 +472,65 @@ async function loadAgents() {
   state.selectedAgentId = state.agents.some((agent) => agent.id === state.selectedAgentId)
     ? state.selectedAgentId
     : sortAgents(state.agents)[0]?.id || null;
+}
+
+function mapDocumentRequestFromDb(row) {
+  const approvedData = row.approved_data || row.ai_extracted_data || row.source_data || {};
+  const clientName = approvedData.clientName
+    || approvedData.tenantName
+    || approvedData.client_name
+    || approvedData.tenant_name
+    || "Unnamed client";
+  const unitNumber = approvedData.unitNumber || approvedData.unit_number || "";
+
+  return {
+    id: row.id,
+    type: row.document_type || "letter_of_offer",
+    status: row.status || "draft",
+    sourceType: row.source_type || "",
+    clientName,
+    unitNumber,
+    originalRequestText: row.original_request_text || "",
+    missingFields: Array.isArray(row.missing_fields) ? row.missing_fields : [],
+    riskFlags: Array.isArray(row.risk_flags) ? row.risk_flags : [],
+    latestVersionNumber: Number(row.latest_version_number || 0),
+    latestFilePath: row.latest_file_path || "",
+    createdAt: row.created_at || "",
+    updatedAt: row.updated_at || row.created_at || "",
+  };
+}
+
+async function loadDocumentRequests() {
+  const { data, error } = await cloudClient
+    .from("document_requests")
+    .select("*")
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  state.documentRequests = (data || []).map(mapDocumentRequestFromDb);
+  state.selectedDocumentRequestId = state.documentRequests.some((request) => request.id === state.selectedDocumentRequestId)
+    ? state.selectedDocumentRequestId
+    : state.documentRequests[0]?.id || null;
+}
+
+async function loadDocumentsIfNeeded({ force = false } = {}) {
+  if (!cloudClient || state.isLoadingDocuments || (state.hasLoadedDocuments && !force)) {
+    return;
+  }
+
+  let loadedSuccessfully = false;
+  await loadCloudSection("isLoadingDocuments", async () => {
+    await loadDocumentRequests();
+    state.documentLoadError = "";
+    loadedSuccessfully = true;
+  }, (error) => {
+    state.documentLoadError = recoveryMessage(error, "Could not load document requests.");
+    setDocumentNotice(recoveryMessage(error, "Could not load document requests."));
+  });
+  state.hasLoadedDocuments = loadedSuccessfully;
 }
 
 async function loadTradeCategories() {
@@ -1757,6 +1876,20 @@ function setAgentNotice(message) {
       setNoticeText(elements.agentSavedNotice, "");
     }
   }, 2200);
+}
+
+function setDocumentNotice(message) {
+  setNoticeText(elements.documentNotice, message);
+
+  if (!message) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (elements.documentNotice.textContent === message) {
+      setNoticeText(elements.documentNotice, "");
+    }
+  }, 5200);
 }
 
 function setTradeCategoryNotice(message) {
@@ -3113,30 +3246,36 @@ function renderTimeline(prospect) {
 function renderTabs() {
   const showingUnits = state.activeTab === "units";
   const showingAgents = state.activeTab === "agents";
+  const showingDocuments = state.activeTab === "documents";
   const showingAdmin = state.activeTab === "admin" && state.currentProfile?.role === "admin";
-  const showingProspects = !showingUnits && !showingAgents && !showingAdmin;
+  const showingProspects = !showingUnits && !showingAgents && !showingDocuments && !showingAdmin;
   const isAdmin = state.currentProfile?.role === "admin";
 
   elements.prospectsTabButton.classList.toggle("active", showingProspects);
   elements.unitsTabButton.classList.toggle("active", showingUnits);
   elements.agentsTabButton.classList.toggle("active", showingAgents);
+  elements.documentsTabButton.classList.toggle("active", showingDocuments);
   elements.adminTabButton.classList.toggle("active", showingAdmin);
   elements.adminTabButton.classList.toggle("hidden", !isAdmin);
   elements.prospectsTabButton.setAttribute("aria-selected", String(showingProspects));
   elements.unitsTabButton.setAttribute("aria-selected", String(showingUnits));
   elements.agentsTabButton.setAttribute("aria-selected", String(showingAgents));
+  elements.documentsTabButton.setAttribute("aria-selected", String(showingDocuments));
   elements.adminTabButton.setAttribute("aria-selected", String(showingAdmin));
   elements.prospectsTabButton.tabIndex = showingProspects ? 0 : -1;
   elements.unitsTabButton.tabIndex = showingUnits ? 0 : -1;
   elements.agentsTabButton.tabIndex = showingAgents ? 0 : -1;
+  elements.documentsTabButton.tabIndex = showingDocuments ? 0 : -1;
   elements.adminTabButton.tabIndex = showingAdmin ? 0 : -1;
   elements.prospectsTabPanel.classList.toggle("hidden", !showingProspects);
   elements.unitsTabPanel.classList.toggle("hidden", !showingUnits);
   elements.agentsTabPanel.classList.toggle("hidden", !showingAgents);
+  elements.documentsTabPanel.classList.toggle("hidden", !showingDocuments);
   elements.adminTabPanel.classList.toggle("hidden", !showingAdmin);
   elements.prospectTopbarActions.classList.toggle("hidden", !showingProspects);
   elements.unitTopbarActions.classList.toggle("hidden", !showingUnits);
   elements.agentTopbarActions.classList.toggle("hidden", !showingAgents);
+  elements.documentTopbarActions.classList.toggle("hidden", !showingDocuments);
 }
 
 function activeVisibleTab() {
@@ -3146,6 +3285,10 @@ function activeVisibleTab() {
 
   if (state.activeTab === "agents") {
     return "agents";
+  }
+
+  if (state.activeTab === "documents") {
+    return "documents";
   }
 
   if (state.activeTab === "admin" && state.currentProfile?.role === "admin") {
@@ -3162,6 +3305,7 @@ function loadingStateAffectsVisibleTab(loadingKey) {
     (loadingKey === "isLoadingProspects" && activeTab === "prospects")
     || (loadingKey === "isLoadingUnits" && activeTab === "units")
     || (loadingKey === "isLoadingAgents" && activeTab === "agents")
+    || (loadingKey === "isLoadingDocuments" && activeTab === "documents")
     || (loadingKey === "isLoadingTradeCategories" && (activeTab === "prospects" || activeTab === "admin"))
     || (loadingKey === "isLoadingUsers" && activeTab === "admin")
   );
@@ -3174,6 +3318,10 @@ function setActiveTab(tab) {
 
   state.activeTab = tab;
   render();
+
+  if (tab === "documents") {
+    void loadDocumentsIfNeeded();
+  }
 }
 
 function tabButtonEntries() {
@@ -3181,6 +3329,7 @@ function tabButtonEntries() {
     { tab: "prospects", button: elements.prospectsTabButton },
     { tab: "units", button: elements.unitsTabButton },
     { tab: "agents", button: elements.agentsTabButton },
+    { tab: "documents", button: elements.documentsTabButton },
     { tab: "admin", button: elements.adminTabButton },
   ].filter((entry) => !entry.button.classList.contains("hidden"));
 }
@@ -3382,6 +3531,263 @@ function renderUsers() {
   });
 }
 
+function documentTypeLabel(type) {
+  return documentTypeLabels[type] || "Document";
+}
+
+function documentStatusLabel(status) {
+  return documentStatusLabels[status] || "Draft";
+}
+
+function getSelectedDocumentRequest() {
+  return state.documentRequests.find((request) => request.id === state.selectedDocumentRequestId) || null;
+}
+
+function documentAiContext() {
+  return {
+    prospects: state.prospects.slice(0, 20).map((prospect) => ({
+      id: prospect.id,
+      name: prospect.name,
+      business: prospect.business,
+      building: prospect.building,
+      unit: prospect.unit,
+      trade: prospect.trade,
+      status: prospect.status,
+    })),
+    units: state.units.slice(0, 40).map((unit) => ({
+      id: unit.id,
+      number: unit.number,
+      pricePerSqft: unit.pricePerSqft,
+      availableDate: unit.availableDate,
+      currentPrice: unit.currentPrice,
+      marketPrice: unit.marketPrice,
+    })),
+  };
+}
+
+function prettyJson(value) {
+  if (!value || (typeof value === "object" && Object.keys(value).length === 0)) {
+    return "No structured fields extracted yet.";
+  }
+
+  return JSON.stringify(value, null, 2);
+}
+
+function listMessages(items, emptyMessage) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return emptyMessage;
+  }
+
+  return items.map((item) => {
+    if (typeof item === "string") {
+      return item;
+    }
+
+    return item.message || item.field || JSON.stringify(item);
+  }).join("\n");
+}
+
+function documentRequestSearchText(request) {
+  return [
+    documentTypeLabel(request.type),
+    documentStatusLabel(request.status),
+    request.clientName,
+    request.unitNumber,
+    request.originalRequestText,
+    request.latestFilePath,
+  ].join(" ").toLowerCase();
+}
+
+function filteredDocumentRequests() {
+  const searchTerm = state.documentSearchTerm.trim().toLowerCase();
+
+  return state.documentRequests.filter((request) => {
+    const matchesSearch = !searchTerm || documentRequestSearchText(request).includes(searchTerm);
+    const matchesType = !state.documentTypeFilter || request.type === state.documentTypeFilter;
+    const matchesStatus = !state.documentStatusFilter || request.status === state.documentStatusFilter;
+    return matchesSearch && matchesType && matchesStatus;
+  });
+}
+
+function selectDocumentRequest(id) {
+  state.selectedDocumentRequestId = id;
+  state.isCreatingDocument = false;
+  render();
+}
+
+function createDocumentRequestShell() {
+  state.selectedDocumentRequestId = null;
+  state.isCreatingDocument = true;
+  state.draftDocumentType = "letter_of_offer";
+  state.draftDocumentSourceType = "ai_request";
+  state.draftDocumentRequestText = "";
+  state.documentAnalysis = null;
+  elements.documentStarterForm.reset();
+  setNoticeText(elements.documentStarterNotice, defaultDocumentNotice);
+  render();
+}
+
+function updateDocumentAnalyzeButtonState() {
+  const hasText = Boolean(state.draftDocumentRequestText.trim());
+  elements.analyzeDocumentButton.disabled = state.isAnalyzingDocument || !state.isCreatingDocument || !hasText;
+}
+
+async function analyzeDocumentRequest() {
+  const inputText = state.draftDocumentRequestText.trim();
+
+  if (!inputText) {
+    setNoticeText(elements.documentStarterNotice, "Enter a document request first.");
+    updateDocumentAnalyzeButtonState();
+    return;
+  }
+
+  state.isAnalyzingDocument = true;
+  setButtonBusy(elements.analyzeDocumentButton, true, "Analyzing...");
+  setNoticeText(elements.documentStarterNotice, "Analyzing request...");
+
+  try {
+    const { data, error } = await cloudClient.functions.invoke("ai-document-agent", {
+      body: {
+        action: "analyze_request",
+        inputText,
+        documentTypeHint: state.draftDocumentType,
+        sourceType: state.draftDocumentSourceType,
+        existingCrmData: documentAiContext(),
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    if (data?.error) {
+      throw new Error(data.error);
+    }
+
+    state.documentAnalysis = data;
+    state.draftDocumentType = data.documentType || state.draftDocumentType;
+    setNoticeText(
+      elements.documentStarterNotice,
+      data.aiUnavailableMessage
+        ? `Fallback analysis complete. ${data.aiUnavailableMessage}`
+        : "AI analysis complete. Review the extracted fields before continuing.",
+    );
+  } catch (error) {
+    state.documentAnalysis = null;
+    setNoticeText(
+      elements.documentStarterNotice,
+      recoveryMessage(error, "Could not analyze the document request. The ai-document-agent function may not be deployed yet."),
+    );
+  } finally {
+    state.isAnalyzingDocument = false;
+    setButtonBusy(elements.analyzeDocumentButton, false);
+    updateDocumentAnalyzeButtonState();
+    renderDocumentDetail();
+  }
+}
+
+function renderDocumentStats() {
+  const filteredRequests = filteredDocumentRequests();
+  elements.documentRequestCount.textContent = String(filteredRequests.length);
+  elements.documentGeneratedCount.textContent = String(filteredRequests.filter((request) => request.latestVersionNumber > 0).length);
+}
+
+function renderDocumentRequestList() {
+  elements.documentRequestList.replaceChildren();
+
+  if (state.isLoadingDocuments) {
+    appendLoadingSkeleton(elements.documentRequestList, "Loading document requests...", 3);
+    return;
+  }
+
+  const requests = filteredDocumentRequests();
+
+  if (requests.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "list-hint";
+    empty.textContent = state.documentLoadError
+      ? "Document backend setup is not connected yet."
+      : state.hasLoadedDocuments
+      ? "No document requests yet."
+      : "Open this tab to load document requests after the database setup is complete.";
+    elements.documentRequestList.append(empty);
+    return;
+  }
+
+  requests.forEach((request) => {
+    const item = document.createElement("button");
+    item.className = "prospect-item";
+    item.classList.toggle("active", request.id === state.selectedDocumentRequestId);
+    item.type = "button";
+    item.setAttribute("role", "listitem");
+    item.addEventListener("click", () => selectDocumentRequest(request.id));
+
+    const main = document.createElement("span");
+    main.className = "prospect-main";
+    const title = document.createElement("strong");
+    const subtitle = document.createElement("small");
+    title.textContent = request.clientName;
+    subtitle.textContent = [documentTypeLabel(request.type), request.unitNumber].filter(Boolean).join(" · ");
+    main.append(title, subtitle);
+
+    const meta = document.createElement("span");
+    meta.className = "prospect-meta";
+    const status = document.createElement("span");
+    const updatedAt = document.createElement("time");
+    status.textContent = documentStatusLabel(request.status);
+    updatedAt.dateTime = request.updatedAt;
+    updatedAt.textContent = formatDateTime(request.updatedAt);
+    meta.append(status, updatedAt);
+
+    item.append(main, meta);
+    elements.documentRequestList.append(item);
+  });
+}
+
+function renderDocumentDetail() {
+  const selected = getSelectedDocumentRequest();
+  const showDetail = state.isCreatingDocument || Boolean(selected);
+
+  elements.documentEmptyState.classList.toggle("hidden", showDetail);
+  elements.documentDetailContent.classList.toggle("hidden", !showDetail);
+
+  if (!showDetail) {
+    return;
+  }
+
+  const analysis = selected ? null : state.documentAnalysis;
+  const type = selected?.type || analysis?.documentType || state.draftDocumentType || "letter_of_offer";
+  const status = selected?.status || "draft";
+  const requestText = selected?.originalRequestText || state.draftDocumentRequestText || "";
+
+  elements.documentDetailEyebrow.textContent = selected ? "Document request" : "New document";
+  elements.documentDetailTitle.textContent = selected
+    ? `${documentTypeLabel(type)} · ${selected.clientName}`
+    : "New Document";
+  elements.documentDetailStatus.textContent = documentStatusLabel(status);
+  elements.documentTypeInput.value = type;
+  elements.documentSourceTypeInput.value = selected?.sourceType || state.draftDocumentSourceType || "ai_request";
+  elements.documentRequestTextInput.value = requestText;
+
+  const missingFields = selected?.missingFields || analysis?.missingFields || [];
+  const riskFlags = selected?.riskFlags || analysis?.riskFlags || [];
+  const followUpQuestions = analysis?.followUpQuestions || [];
+  elements.documentExtractedFieldsText.textContent = prettyJson(analysis?.extractedFields);
+  elements.documentMissingFieldsText.textContent = missingFields.length
+    ? listMessages(missingFields, "")
+    : "No missing-information check has been recorded yet.";
+  elements.documentRiskFlagsText.textContent = riskFlags.length
+    ? listMessages(riskFlags, "")
+    : "No risk flags have been recorded yet.";
+  elements.documentFollowUpQuestionsText.textContent = followUpQuestions.length
+    ? listMessages(followUpQuestions, "")
+    : "No follow-up questions yet.";
+  elements.documentVersionHistoryText.textContent = selected?.latestVersionNumber
+    ? `Latest generated version: v${selected.latestVersionNumber}`
+    : "No generated versions yet.";
+  updateDocumentAnalyzeButtonState();
+}
+
 function render() {
   const activeTab = activeVisibleTab();
   renderTabs();
@@ -3412,6 +3818,13 @@ function render() {
     renderAgentList();
     renderAgentForm(selectedAgent);
     renderAgentTimeline(selectedAgent);
+    return;
+  }
+
+  if (activeTab === "documents") {
+    renderDocumentStats();
+    renderDocumentRequestList();
+    renderDocumentDetail();
     return;
   }
 
@@ -3519,10 +3932,12 @@ async function refreshAppData() {
       state.prospects = [];
       state.units = [];
       state.agents = [];
+      state.documentRequests = [];
       state.users = [];
       state.isLoadingProspects = false;
       state.isLoadingUnits = false;
       state.isLoadingAgents = false;
+      state.isLoadingDocuments = false;
       state.isLoadingTradeCategories = false;
       state.isLoadingUsers = false;
       showSignedOut("Your account exists, but access has not been approved yet.");
@@ -4665,10 +5080,12 @@ elements.confirmDialog.addEventListener("keydown", handleConfirmDialogKeydown);
 elements.prospectsTabButton.addEventListener("click", () => setActiveTab("prospects"));
 elements.unitsTabButton.addEventListener("click", () => setActiveTab("units"));
 elements.agentsTabButton.addEventListener("click", () => setActiveTab("agents"));
+elements.documentsTabButton.addEventListener("click", () => setActiveTab("documents"));
 elements.adminTabButton.addEventListener("click", () => setActiveTab("admin"));
 elements.prospectsTabButton.addEventListener("keydown", (event) => handleTabKeyboard(event, "prospects"));
 elements.unitsTabButton.addEventListener("keydown", (event) => handleTabKeyboard(event, "units"));
 elements.agentsTabButton.addEventListener("keydown", (event) => handleTabKeyboard(event, "agents"));
+elements.documentsTabButton.addEventListener("keydown", (event) => handleTabKeyboard(event, "documents"));
 elements.adminTabButton.addEventListener("keydown", (event) => handleTabKeyboard(event, "admin"));
 elements.newProspectButton.addEventListener("click", createProspect);
 elements.emptyNewButton.addEventListener("click", createProspect);
@@ -4676,6 +5093,9 @@ elements.newUnitButton.addEventListener("click", createUnit);
 elements.emptyNewUnitButton.addEventListener("click", createUnit);
 elements.newAgentButton.addEventListener("click", createAgent);
 elements.emptyNewAgentButton.addEventListener("click", createAgent);
+elements.newDocumentButton.addEventListener("click", createDocumentRequestShell);
+elements.emptyNewDocumentButton.addEventListener("click", createDocumentRequestShell);
+elements.analyzeDocumentButton.addEventListener("click", analyzeDocumentRequest);
 elements.importAgentsCsvButton.addEventListener("click", () => elements.agentCsvFileInput.click());
 elements.agentCsvFileInput.addEventListener("change", (event) => {
   importAgentsCsvFile(event.target.files[0]);
@@ -4739,6 +5159,10 @@ elements.tradeCategoryForm.addEventListener("submit", (event) => {
 const debouncedRenderProspectList = debounce(renderProspectList, 120);
 const debouncedRenderUnitList = debounce(renderUnitList, 120);
 const debouncedRenderAgentList = debounce(renderAgentList, 120);
+const debouncedRenderDocumentList = debounce(() => {
+  renderDocumentStats();
+  renderDocumentRequestList();
+}, 120);
 
 elements.searchInput.addEventListener("input", (event) => {
   state.searchTerm = event.target.value;
@@ -4753,6 +5177,39 @@ elements.unitSearchInput.addEventListener("input", (event) => {
 elements.agentSearchInput.addEventListener("input", (event) => {
   state.agentSearchTerm = event.target.value;
   debouncedRenderAgentList();
+});
+
+elements.documentSearchInput.addEventListener("input", (event) => {
+  state.documentSearchTerm = event.target.value;
+  debouncedRenderDocumentList();
+});
+
+elements.documentTypeFilterInput.addEventListener("change", (event) => {
+  state.documentTypeFilter = event.target.value;
+  renderDocumentStats();
+  renderDocumentRequestList();
+});
+
+elements.documentStatusFilterInput.addEventListener("change", (event) => {
+  state.documentStatusFilter = event.target.value;
+  renderDocumentStats();
+  renderDocumentRequestList();
+});
+
+elements.documentTypeInput.addEventListener("change", (event) => {
+  state.draftDocumentType = event.target.value;
+  state.documentAnalysis = null;
+  renderDocumentDetail();
+});
+
+elements.documentSourceTypeInput.addEventListener("change", (event) => {
+  state.draftDocumentSourceType = event.target.value;
+});
+
+elements.documentRequestTextInput.addEventListener("input", (event) => {
+  state.draftDocumentRequestText = event.target.value;
+  state.documentAnalysis = null;
+  updateDocumentAnalyzeButtonState();
 });
 
 elements.contactDateInput.addEventListener("input", (event) => {

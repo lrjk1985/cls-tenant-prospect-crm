@@ -64,7 +64,23 @@ Backup note: Supabase database backups cover database records. Storage files are
 - Export prospects and interactions to CSV. Prospect exports include one row per interaction, plus interaction number, interaction total, and attachment file details when present.
 - Manage units in a separate Units tab with pricing, availability, floor plan PDFs, M&E PDFs, and photos.
 - Manage agents in a separate Agents tab with contact details, grading, and timestamped notes.
+- Prepare document requests in the Documents tab for Quotations, Letters of Offer, and Lease Agreements.
 - Save records in the shared Supabase cloud database.
+
+## AI Document Generator Setup
+
+The Documents tab has been added as an internal CRM module shell. Live AI analysis and Word document generation require the backend setup first.
+
+1. Run `supabase/sql/ai_document_generator_setup.sql` in the Supabase SQL Editor.
+2. Upload `.docx` templates to the private `document-templates` Storage bucket.
+3. Add one active row per document type in `document_templates`, pointing to each template `storage_path`.
+4. Deploy the `supabase/functions/ai-document-agent` Edge Function.
+5. Add the AI provider key as a Supabase Edge Function secret, for example `OPENAI_API_KEY`. Do not place AI keys in `app.js`.
+6. Deploy the document generation Edge Function before enabling the Generate button.
+
+The generator should merge only staff-confirmed `approved_data` into templates. AI output is for extraction, missing-information checks, wording cleanup, risk flags, and revision suggestions; staff must confirm the structured data before any Word document is generated.
+
+If `OPENAI_API_KEY` is not configured, `ai-document-agent` falls back to a limited rule-based checker. This is useful for testing missing-field gates, but it is not a replacement for the AI extraction flow.
 
 ## CSV Import
 
