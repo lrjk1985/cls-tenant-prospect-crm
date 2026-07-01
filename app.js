@@ -11,7 +11,7 @@ const tradeCategoryStorageKey = "tenantProspectCrmTradeCategories";
 const defaultInteractionNotice = "Timestamp added automatically. Attachments up to 10 MB.";
 const defaultUnitDocumentNotice = "Documents are saved securely in Supabase Storage. Keep files under 10 MB each.";
 const defaultAgentInteractionNotice = "Timestamp added automatically.";
-const defaultDocumentNotice = "Set up the Supabase document tables and Edge Functions before generating Word documents.";
+const defaultDocumentNotice = "Choose AI Request to extract fields from notes, or Structured Form to enter the required fields yourself.";
 const defaultTemplateNotice = "Upload existing Word documents here, then add placeholders before generation is enabled.";
 const documentTypeLabels = {
   quotation: "Quotation",
@@ -109,6 +109,12 @@ const multilineDocumentFields = new Set([
   "rental_structure",
   "option_to_renew",
   "special_conditions",
+]);
+const documentNoneHelpfulFields = new Set([
+  "option_to_renew",
+  "special_conditions",
+  "rent_free",
+  "fitting_out_period",
 ]);
 const dailyQuotes = [
   { text: "Brevity is the soul of wit.", author: "William Shakespeare", source: "Hamlet" },
@@ -283,12 +289,22 @@ const elements = {
   documentDetailTitle: document.querySelector("#documentDetailTitle"),
   documentDetailStatus: document.querySelector("#documentDetailStatus"),
   documentStarterForm: document.querySelector("#documentStarterForm"),
+  documentStepList: document.querySelector("#documentStepList"),
   documentTypeInput: document.querySelector("#documentTypeInput"),
   documentSourceTypeInput: document.querySelector("#documentSourceTypeInput"),
+  documentAiSourceButton: document.querySelector("#documentAiSourceButton"),
+  documentStructuredSourceButton: document.querySelector("#documentStructuredSourceButton"),
+  documentAiInputBlock: document.querySelector("#documentAiInputBlock"),
+  documentStructuredIntro: document.querySelector("#documentStructuredIntro"),
   documentRequestTextInput: document.querySelector("#documentRequestTextInput"),
   documentStarterNotice: document.querySelector("#documentStarterNotice"),
   analyzeDocumentButton: document.querySelector("#analyzeDocumentButton"),
   generateDocumentButton: document.querySelector("#generateDocumentButton"),
+  documentReviewSection: document.querySelector("#documentReviewSection"),
+  documentReviewHint: document.querySelector("#documentReviewHint"),
+  documentExtractedFieldsCard: document.querySelector("#documentExtractedFieldsCard"),
+  documentConfirmedFieldsCard: document.querySelector("#documentConfirmedFieldsCard"),
+  documentRequiredProgressText: document.querySelector("#documentRequiredProgressText"),
   documentExtractedFieldsText: document.querySelector("#documentExtractedFieldsText"),
   documentApprovedFieldsForm: document.querySelector("#documentApprovedFieldsForm"),
   documentMissingFieldsText: document.querySelector("#documentMissingFieldsText"),
@@ -4222,6 +4238,44 @@ function listMessages(items, emptyMessage) {
   }).join("\n");
 }
 
+function updateDocumentRequiredProgress(documentType, data) {
+  const requiredFields = requiredPlaceholdersForType(documentType);
+  const missing = missingRequiredDocumentFields(documentType, data);
+  const complete = Math.max(0, requiredFields.length - missing.length);
+  elements.documentRequiredProgressText.textContent = `${complete} of ${requiredFields.length} required complete`;
+}
+
+function updateDocumentStepList(activeStep) {
+  const items = [...elements.documentStepList.querySelectorAll("li")];
+  items.forEach((item, index) => {
+    const step = index + 1;
+    item.classList.toggle("active", step === activeStep);
+    item.classList.toggle("complete", step < activeStep);
+  });
+}
+
+function setDocumentSourceType(sourceType) {
+  const nextSourceType = sourceType === "structured_form" ? "structured_form" : "ai_request";
+  state.draftDocumentSourceType = nextSourceType;
+  elements.documentSourceTypeInput.value = nextSourceType;
+  renderDocumentDetail();
+}
+
+function renderDocumentSourceControls(sourceType, disabled = false) {
+  const sourceButtons = [elements.documentAiSourceButton, elements.documentStructuredSourceButton];
+
+  sourceButtons.forEach((button) => {
+    const isActive = button.dataset.sourceType === sourceType;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+    button.disabled = disabled;
+  });
+
+  elements.documentAiInputBlock.classList.toggle("hidden", sourceType !== "ai_request");
+  elements.documentStructuredIntro.classList.toggle("hidden", sourceType !== "structured_form");
+  elements.analyzeDocumentButton.classList.toggle("hidden", sourceType !== "ai_request");
+}
+
 function renderDocumentApprovedFields(documentType, data, disabled = false) {
   elements.documentApprovedFieldsForm.replaceChildren();
 
@@ -4229,6 +4283,7 @@ function renderDocumentApprovedFields(documentType, data, disabled = false) {
     const empty = document.createElement("p");
     empty.className = "document-empty";
     empty.textContent = "Letter of Offer generation is enabled first. Other document types will follow after this flow is tested.";
+    elements.documentRequiredProgressText.textContent = "Coming soon";
     elements.documentApprovedFieldsForm.append(empty);
     return;
   }
@@ -4236,7 +4291,11 @@ function renderDocumentApprovedFields(documentType, data, disabled = false) {
   requiredPlaceholdersForType(documentType).forEach((key) => {
     const label = document.createElement("label");
     const labelText = document.createElement("span");
-    labelText.textContent = documentFieldLabel(key);
+    const labelName = document.createElement("strong");
+    const requiredBadge = document.createElement("em");
+    labelName.textContent = documentFieldLabel(key);
+    requiredBadge.textContent = "Required";
+    labelText.append(labelName, requiredBadge);
 
     const field = multilineDocumentFields.has(key)
       ? document.createElement("textarea")
@@ -4253,6 +4312,7 @@ function renderDocumentApprovedFields(documentType, data, disabled = false) {
     field.addEventListener("input", (event) => {
       state.documentReviewData[key] = event.target.value;
       const missing = missingRequiredDocumentFields(documentType, state.documentReviewData);
+      updateDocumentRequiredProgress(documentType, state.documentReviewData);
       elements.documentMissingFieldsText.textContent = missing.length
         ? missing.map(documentFieldLabel).join("\n")
         : "All required confirmed fields are complete.";
@@ -4260,8 +4320,15 @@ function renderDocumentApprovedFields(documentType, data, disabled = false) {
     });
 
     label.append(labelText, field);
+    if (documentNoneHelpfulFields.has(key)) {
+      const helper = document.createElement("small");
+      helper.textContent = "Enter \"None\" if this does not apply.";
+      label.append(helper);
+    }
     elements.documentApprovedFieldsForm.append(label);
   });
+
+  updateDocumentRequiredProgress(documentType, data);
 }
 
 function documentRequestSearchText(request) {
@@ -4316,16 +4383,23 @@ function createDocumentRequestShell() {
 
 function updateDocumentAnalyzeButtonState() {
   const hasText = Boolean(state.draftDocumentRequestText.trim());
-  elements.analyzeDocumentButton.disabled = state.isAnalyzingDocument || !state.isCreatingDocument || !hasText;
+  elements.analyzeDocumentButton.disabled = (
+    state.isAnalyzingDocument
+    || !state.isCreatingDocument
+    || state.draftDocumentSourceType !== "ai_request"
+    || !hasText
+  );
 }
 
 function updateGenerateDocumentButtonState(documentType = state.draftDocumentType) {
   const missing = missingRequiredDocumentFields(documentType, state.documentReviewData);
   const activeTemplate = activeTemplateForType(documentType);
+  const hasReviewableData = state.draftDocumentSourceType === "structured_form" || Boolean(state.documentAnalysis);
   elements.generateDocumentButton.disabled = (
     state.isGeneratingDocument
     || !state.isCreatingDocument
     || documentType !== "letter_of_offer"
+    || !hasReviewableData
     || missing.length > 0
     || !activeTemplate
   );
@@ -4514,6 +4588,7 @@ function renderDocumentDetail() {
   const analysis = selected ? null : state.documentAnalysis;
   const type = selected?.type || analysis?.documentType || state.draftDocumentType || "letter_of_offer";
   const status = selected?.status || "draft";
+  const sourceType = selected?.sourceType || state.draftDocumentSourceType || "ai_request";
   const requestText = selected?.originalRequestText || state.draftDocumentRequestText || "";
 
   elements.documentDetailEyebrow.textContent = selected ? "Document request" : "New document";
@@ -4522,8 +4597,9 @@ function renderDocumentDetail() {
     : "New Document";
   elements.documentDetailStatus.textContent = documentStatusLabel(status);
   elements.documentTypeInput.value = type;
-  elements.documentSourceTypeInput.value = selected?.sourceType || state.draftDocumentSourceType || "ai_request";
+  elements.documentSourceTypeInput.value = sourceType;
   elements.documentRequestTextInput.value = requestText;
+  renderDocumentSourceControls(sourceType, Boolean(selected));
 
   const missingFields = selected?.missingFields || analysis?.missingFields || [];
   const riskFlags = selected?.riskFlags || analysis?.riskFlags || [];
@@ -4531,9 +4607,23 @@ function renderDocumentDetail() {
   const reviewData = selected
     ? normalizeDocumentFieldData(selected.approvedData || selected.aiExtractedData || {})
     : state.documentReviewData;
+  const showReview = Boolean(selected) || sourceType === "structured_form" || Boolean(analysis);
+  const activeStep = selected
+    ? 4
+    : showReview
+    ? missingRequiredDocumentFields(type, reviewData).length ? 3 : 4
+    : requestText.trim()
+    ? 2
+    : 1;
   const confirmedMissingFields = state.isCreatingDocument
     ? missingRequiredDocumentFields(type, reviewData)
     : missingFields;
+  updateDocumentStepList(activeStep);
+  elements.documentReviewSection.classList.toggle("hidden", !showReview);
+  elements.documentExtractedFieldsCard.classList.toggle("hidden", sourceType !== "ai_request" || (!analysis && !selected?.aiExtractedData));
+  elements.documentReviewHint.textContent = sourceType === "structured_form"
+    ? "Complete every required template field before generating the Word document."
+    : "Review the AI-extracted fields. Edit anything that is incomplete or incorrect before generating.";
   elements.documentExtractedFieldsText.textContent = prettyJson(selected?.aiExtractedData || analysis?.extractedFields);
   renderDocumentApprovedFields(type, reviewData, Boolean(selected));
   elements.documentMissingFieldsText.textContent = confirmedMissingFields.length
@@ -6138,7 +6228,15 @@ elements.documentTypeInput.addEventListener("change", (event) => {
 });
 
 elements.documentSourceTypeInput.addEventListener("change", (event) => {
-  state.draftDocumentSourceType = event.target.value;
+  setDocumentSourceType(event.target.value);
+});
+
+elements.documentAiSourceButton.addEventListener("click", () => {
+  setDocumentSourceType("ai_request");
+});
+
+elements.documentStructuredSourceButton.addEventListener("click", () => {
+  setDocumentSourceType("structured_form");
 });
 
 elements.documentRequestTextInput.addEventListener("input", (event) => {

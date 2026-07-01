@@ -322,6 +322,10 @@ button {
   overflow: visible;
 }
 
+.documents-panel:not(.hidden) {
+  min-height: auto;
+}
+
 .document-mode-bar {
   border-bottom: 1px solid var(--line);
   background: var(--surface);
@@ -374,9 +378,18 @@ button {
   flex: 1;
 }
 
+.document-requests-view:not(.hidden) {
+  min-height: auto;
+}
+
 .document-templates-view {
   overflow: auto;
   background: #fffafc;
+}
+
+.documents-panel .detail-pane {
+  max-height: none;
+  overflow: visible;
 }
 
 .template-library-layout {
@@ -637,6 +650,12 @@ button:focus-visible {
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
+
+  .documents-panel .detail-pane {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
 }
 
 .empty-state {
@@ -860,9 +879,135 @@ label span {
   gap: 14px;
 }
 
+.document-step-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: document-step;
+}
+
+.document-step-list li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--muted);
+  padding: 7px 9px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.document-step-list li::before {
+  counter-increment: document-step;
+  content: counter(document-step);
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #f3e7ec;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.document-step-list li.active {
+  border-color: rgba(203, 22, 79, 0.32);
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+.document-step-list li.active::before,
+.document-step-list li.complete::before {
+  background: var(--mv-magenta);
+  color: #fff;
+}
+
+.document-source-field {
+  display: grid;
+  gap: 8px;
+}
+
+.document-source-field > span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.document-source-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.document-source-option {
+  display: grid;
+  gap: 4px;
+  min-height: 88px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  padding: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.document-source-option strong {
+  font-size: 14px;
+}
+
+.document-source-option small,
+.document-structured-intro p,
+.document-approved-fields small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.document-source-option.active {
+  border-color: rgba(203, 22, 79, 0.38);
+  background: var(--surface-soft);
+  box-shadow: 0 6px 18px rgba(203, 22, 79, 0.08);
+}
+
+.document-source-option:disabled {
+  cursor: default;
+}
+
+.document-ai-input,
+.document-structured-intro {
+  display: grid;
+  gap: 8px;
+}
+
+.document-structured-intro {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+}
+
+.document-structured-intro p {
+  margin: 0;
+}
+
 .document-review-grid {
   display: grid;
   gap: 12px;
+}
+
+.document-raw-output summary {
+  cursor: pointer;
+  color: var(--mv-magenta);
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .document-approved-fields {
@@ -878,11 +1023,30 @@ label span {
 
 .document-approved-fields span {
   margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.document-approved-fields span strong {
+  font-size: 13px;
+}
+
+.document-approved-fields span em {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  padding: 2px 7px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
 }
 
 .document-approved-fields input,
 .document-approved-fields textarea {
-  min-height: 36px;
+  min-height: 44px;
 }
 
 .document-approved-fields textarea {
@@ -1185,6 +1349,11 @@ label span {
 
   .auth-actions,
   .user-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .document-step-list,
+  .document-source-options {
     grid-template-columns: 1fr;
   }
 

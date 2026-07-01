@@ -614,6 +614,12 @@
                   </div>
 
                   <form class="interaction-form document-starter-form" id="documentStarterForm">
+                    <ol class="document-step-list" id="documentStepList" aria-label="Document creation steps">
+                      <li class="active">Choose method</li>
+                      <li>Enter details</li>
+                      <li>Review required fields</li>
+                      <li>Generate document</li>
+                    </ol>
                     <label>
                       <span>Document type</span>
                       <select id="documentTypeInput" name="documentType">
@@ -622,45 +628,65 @@
                         <option value="lease_agreement">Lease Agreement</option>
                       </select>
                     </label>
-                    <label>
+                    <div class="document-source-field">
                       <span>Start from</span>
-                      <select id="documentSourceTypeInput" name="sourceType">
+                      <select class="sr-only" id="documentSourceTypeInput" name="sourceType" tabindex="-1" aria-hidden="true">
                         <option value="ai_request">AI request</option>
                         <option value="structured_form">Structured form</option>
                       </select>
-                    </label>
-                    <label>
-                      <span>AI request or internal notes</span>
-                      <textarea id="documentRequestTextInput" rows="6" placeholder="Example: Prepare a Letter of Offer for ABC Pte Ltd for Unit #02-15..."></textarea>
-                    </label>
+                      <div class="document-source-options" role="group" aria-label="Start from">
+                        <button class="document-source-option active" id="documentAiSourceButton" type="button" data-source-type="ai_request">
+                          <strong>AI Request</strong>
+                          <small>Describe the document in plain English. AI will extract the fields for your review.</small>
+                        </button>
+                        <button class="document-source-option" id="documentStructuredSourceButton" type="button" data-source-type="structured_form">
+                          <strong>Structured Form</strong>
+                          <small>Fill the required template fields yourself before generating the Word document.</small>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="document-ai-input" id="documentAiInputBlock">
+                      <label>
+                        <span>AI request</span>
+                        <textarea id="documentRequestTextInput" rows="6" placeholder="Example: Prepare a Letter of Offer for ABC Pte Ltd for Unit #02-15..."></textarea>
+                      </label>
+                    </div>
+                    <div class="document-structured-intro hidden" id="documentStructuredIntro">
+                      <strong>Structured form selected</strong>
+                      <p>Complete the required fields below. Use "None" for fields that are intentionally not applicable.</p>
+                    </div>
                     <div class="form-actions">
-                      <p class="timestamp-hint" id="documentStarterNotice">Backend setup is next. This shell is ready for the AI review and document generation flow.</p>
+                      <p class="timestamp-hint" id="documentStarterNotice">Choose AI Request to extract fields from notes, or Structured Form to enter the required fields yourself.</p>
                       <button class="secondary-button" id="analyzeDocumentButton" type="button">Analyze Request</button>
                       <button class="primary-button" id="generateDocumentButton" type="button" disabled>Generate Document</button>
                     </div>
                   </form>
                 </section>
 
-                <section class="interaction-panel" aria-label="Document review">
+                <section class="interaction-panel" id="documentReviewSection" aria-label="Document review">
                   <div class="section-heading">
                     <div>
                       <p class="eyebrow">Human review</p>
                       <h2>Review Before Generation</h2>
+                      <p id="documentReviewHint">Confirm the required template fields before generating the Word document.</p>
                     </div>
                   </div>
 
                   <div class="document-review-grid">
-                    <article class="document-card">
+                    <article class="document-card" id="documentExtractedFieldsCard">
                       <div class="document-card-heading">
                         <strong>Extracted fields</strong>
                         <span class="category-pill">Draft</span>
                       </div>
-                      <pre class="document-json-preview" id="documentExtractedFieldsText">No AI analysis has been run yet.</pre>
+                      <details class="document-raw-output">
+                        <summary>View AI raw output</summary>
+                        <pre class="document-json-preview" id="documentExtractedFieldsText">No AI analysis has been run yet.</pre>
+                      </details>
                     </article>
-                    <article class="document-card">
+                    <article class="document-card" id="documentConfirmedFieldsCard">
                       <div class="document-card-heading">
                         <strong>Confirmed fields</strong>
-                        <span class="category-pill">Staff review</span>
+                        <span class="category-pill" id="documentRequiredProgressText" aria-live="polite">0 required complete</span>
                       </div>
                       <form class="document-approved-fields" id="documentApprovedFieldsForm"></form>
                     </article>
@@ -669,7 +695,7 @@
                         <strong>Missing information</strong>
                         <span class="category-pill">Required gate</span>
                       </div>
-                      <p class="document-empty" id="documentMissingFieldsText">No AI analysis has been run yet.</p>
+                      <p class="document-empty" id="documentMissingFieldsText" aria-live="polite">No AI analysis has been run yet.</p>
                     </article>
                     <article class="document-card">
                       <div class="document-card-heading">
