@@ -25,19 +25,42 @@ const corsHeaders = {
 };
 
 const documentRequirements: Record<Exclude<DocumentType, "revision_request" | "unclear">, string[]> = {
-  quotation: ["clientName", "eventBookingLocation", "bookingDates", "price"],
-  letter_of_offer: ["tenantName", "unitNumber", "rentalStructure", "optionToRenew", "specialConditions"],
+  quotation: ["client_name", "event_booking_location", "booking_dates", "price"],
+  letter_of_offer: [
+    "date",
+    "tenant_company_name",
+    "tenant_address",
+    "tenant_email",
+    "tenant_name",
+    "unit_number",
+    "floor_area",
+    "permitted_use",
+    "shop_name",
+    "rental_structure",
+    "security_deposit",
+    "advance_rental",
+    "fitting_out_deposit",
+    "stamp_fees",
+    "option_to_renew",
+    "base_rent",
+    "service_charge",
+    "joint_promotion_fund",
+    "rent_free",
+    "fitting_out_period",
+    "offer_lapse",
+    "special_conditions",
+  ],
   lease_agreement: [
-    "tenantName",
-    "unitNumber",
-    "permittedUse",
-    "leaseTerm",
-    "commencementDate",
-    "rentalStructure",
-    "securityDeposit",
-    "handoverCondition",
-    "optionToRenew",
-    "specialConditions",
+    "tenant_name",
+    "unit_number",
+    "permitted_use",
+    "lease_term",
+    "commencement_date",
+    "rental_structure",
+    "security_deposit",
+    "handover_condition",
+    "option_to_renew",
+    "special_conditions",
   ],
 };
 
@@ -215,7 +238,7 @@ function analyzeWithRules(inputText: string, hint: DocumentType): AnalysisOutput
     followUpQuestions,
     riskFlags,
     needsHumanReview: true,
-    cleanedSpecialConditions: cleanSpecialConditions(extractedFields.specialConditions),
+    cleanedSpecialConditions: cleanSpecialConditions(extractedFields.special_conditions),
     aiProvider: "rules-fallback",
     aiUnavailableMessage: "AI provider is not configured yet, so this used the controlled rule-based checker.",
   };
@@ -227,9 +250,25 @@ function extractDocumentFields(documentType: DocumentType, inputText: string) {
   const unitNumber = matchValue(text, /\bunit\s+([#a-z0-9-]+)/i);
   const tenantName = matchValue(text, /\bfor\s+(.+?)\s+for\s+unit\b/i) || matchValue(text, /\btenant\s+(?:is\s+)?(.+?)(?:\s+for\s+unit|\.|$)/i);
   const clientName = tenantName || matchValue(text, /\bclient\s+(?:is\s+)?(.+?)(?:\.|$)/i);
+  const documentDate = matchValue(text, /\b(?:date|dated)\s+(?:is\s+)?(\d{1,2}\s+[a-z]+\s+\d{4})/i);
+  const tenantCompanyName = matchValue(text, /\btenant company(?: name)?\s+(?:is\s+)?(.+?)(?:\.|,|$)/i) || tenantName;
+  const tenantAddress = matchValue(text, /\btenant address\s+(?:is\s+)?(.+?)(?:\.|$)/i);
+  const tenantEmail = matchValue(text, /\btenant email(?:s)?\s+(?:is|are)?\s*([^.,]+(?:@[^.,\s]+)?(?:[;,\s]+[^.,\s]+@[^.,\s]+)*)/i);
+  const shopName = matchValue(text, /\bshop name\s+(?:is\s+)?(.+?)(?:\.|,|$)/i) || matchValue(text, /\btrading name\s+(?:is\s+)?(.+?)(?:\.|,|$)/i);
+  const floorArea = matchValue(text, /\bfloor area\s+(?:is\s+)?([^.,]+)/i) || matchValue(text, /\b(\d[\d,.]*\s*(?:sq\s*ft|sqft|square feet|sqm|sq\s*m))\b/i);
   const leaseTerm = matchValue(text, /\blease term\s+(?:is\s+)?([^.,]+)/i) || matchValue(text, /\b(\d+\s+years?)\b/i);
   const commencementDate = matchValue(text, /\bfrom\s+(\d{1,2}\s+[a-z]+\s+\d{4})/i);
+  const expiryDate = matchValue(text, /\b(?:to|until|expir(?:y|ing on))\s+(\d{1,2}\s+[a-z]+\s+\d{4})/i);
   const securityDeposit = matchValue(text, /\bsecurity deposit\s+(?:is\s+)?([^.,]+)/i);
+  const advanceRental = matchValue(text, /\badvance rental\s+(?:is\s+)?([^.,]+)/i);
+  const fittingOutDeposit = matchValue(text, /\bfitting out deposit\s+(?:is\s+)?([^.,]+)/i);
+  const stampFees = matchValue(text, /\bstamp fees?\s+(?:is|are)?\s*([^.,]+)/i);
+  const baseRent = matchValue(text, /\bbase rent\s+(?:is\s+)?([^.,]+)/i);
+  const serviceCharge = matchValue(text, /\bservice charge\s+(?:is\s+)?([^.,]+)/i);
+  const jointPromotionFund = matchValue(text, /\b(?:joint promotion fund|jpf)\s+(?:is\s+)?([^.,]+)/i);
+  const rentFree = matchValue(text, /\brent[- ]free\s+(?:period\s+)?(?:is\s+)?([^.,]+)/i);
+  const fittingOutPeriod = matchValue(text, /\bfitting out period\s+(?:is\s+)?([^.,]+)/i);
+  const offerLapse = matchValue(text, /\boffer lapse\s+(?:is\s+)?([^.,]+)/i);
   const permittedUse = matchValue(text, /\bpermitted use\s+(?:is\s+)?([^.,]+)/i);
   const price = matchValue(text, /\bprice\s+(?:is\s+)?([^.,]+)/i) || matchValue(text, /(\$[\d,.]+(?:\s*(?:psf|per square foot))?)/i);
   const bookingDates = matchValue(text, /\bbooking dates?\s+(?:are|is)?\s*([^.,]+)/i) || matchValue(text, /\bon\s+(\d{1,2}\s+[a-z]+\s+\d{4})/i);
@@ -242,21 +281,45 @@ function extractDocumentFields(documentType: DocumentType, inputText: string) {
   const handoverCondition = matchValue(text, /\bhandover\s+(?:is\s+)?([^.,]+)/i);
 
   if (documentType === "quotation") {
-    assignPresent(fields, "clientName", clientName);
-    assignPresent(fields, "eventBookingLocation", eventBookingLocation);
-    assignPresent(fields, "bookingDates", bookingDates);
+    assignPresent(fields, "client_name", clientName);
+    assignPresent(fields, "event_booking_location", eventBookingLocation);
+    assignPresent(fields, "booking_dates", bookingDates);
     assignPresent(fields, "price", price);
+  } else if (documentType === "letter_of_offer") {
+    assignPresent(fields, "date", documentDate);
+    assignPresent(fields, "tenant_company_name", tenantCompanyName);
+    assignPresent(fields, "tenant_address", tenantAddress);
+    assignPresent(fields, "tenant_email", tenantEmail);
+    assignPresent(fields, "tenant_name", tenantName || clientName);
+    assignPresent(fields, "unit_number", unitNumber);
+    assignPresent(fields, "floor_area", floorArea);
+    assignPresent(fields, "permitted_use", permittedUse);
+    assignPresent(fields, "shop_name", shopName);
+    assignPresent(fields, "rental_structure", rentalStructure.length ? rentalStructure : leaseTerm || undefined);
+    assignPresent(fields, "security_deposit", securityDeposit);
+    assignPresent(fields, "advance_rental", advanceRental);
+    assignPresent(fields, "fitting_out_deposit", fittingOutDeposit);
+    assignPresent(fields, "stamp_fees", stampFees);
+    assignPresent(fields, "option_to_renew", optionToRenew);
+    assignPresent(fields, "base_rent", baseRent || price);
+    assignPresent(fields, "service_charge", serviceCharge);
+    assignPresent(fields, "joint_promotion_fund", jointPromotionFund);
+    assignPresent(fields, "rent_free", rentFree);
+    assignPresent(fields, "fitting_out_period", fittingOutPeriod);
+    assignPresent(fields, "offer_lapse", offerLapse);
+    assignPresent(fields, "special_conditions", specialConditions.length ? specialConditions : undefined);
   } else {
-    assignPresent(fields, "tenantName", tenantName || clientName);
-    assignPresent(fields, "unitNumber", unitNumber);
-    assignPresent(fields, "rentalStructure", rentalStructure.length ? rentalStructure : undefined);
-    assignPresent(fields, "leaseTerm", leaseTerm);
-    assignPresent(fields, "commencementDate", commencementDate);
-    assignPresent(fields, "securityDeposit", securityDeposit);
-    assignPresent(fields, "permittedUse", permittedUse);
-    assignPresent(fields, "handoverCondition", handoverCondition);
-    assignPresent(fields, "optionToRenew", optionToRenew);
-    assignPresent(fields, "specialConditions", specialConditions.length ? specialConditions : undefined);
+    assignPresent(fields, "tenant_name", tenantName || clientName);
+    assignPresent(fields, "unit_number", unitNumber);
+    assignPresent(fields, "rental_structure", rentalStructure.length ? rentalStructure : undefined);
+    assignPresent(fields, "lease_term", leaseTerm);
+    assignPresent(fields, "commencement_date", commencementDate);
+    assignPresent(fields, "expiry_date", expiryDate);
+    assignPresent(fields, "security_deposit", securityDeposit);
+    assignPresent(fields, "permitted_use", permittedUse);
+    assignPresent(fields, "handover_condition", handoverCondition);
+    assignPresent(fields, "option_to_renew", optionToRenew);
+    assignPresent(fields, "special_conditions", specialConditions.length ? specialConditions : undefined);
   }
 
   return fields;
@@ -266,6 +329,46 @@ function assignPresent(fields: Record<string, unknown>, key: string, value: unkn
   if (value !== undefined && value !== null && String(value).trim() !== "") {
     fields[key] = value;
   }
+}
+
+function normalizeExtractedFieldKeys(fields: Record<string, unknown>) {
+  const aliases: Record<string, string> = {
+    clientName: "client_name",
+    eventBookingLocation: "event_booking_location",
+    bookingDates: "booking_dates",
+    tenantCompanyName: "tenant_company_name",
+    tenantAddress: "tenant_address",
+    tenantEmail: "tenant_email",
+    tenantName: "tenant_name",
+    unitNumber: "unit_number",
+    floorArea: "floor_area",
+    permittedUse: "permitted_use",
+    shopName: "shop_name",
+    rentalStructure: "rental_structure",
+    securityDeposit: "security_deposit",
+    advanceRental: "advance_rental",
+    fittingOutDeposit: "fitting_out_deposit",
+    stampFees: "stamp_fees",
+    optionToRenew: "option_to_renew",
+    baseRent: "base_rent",
+    serviceCharge: "service_charge",
+    jointPromotionFund: "joint_promotion_fund",
+    rentFree: "rent_free",
+    fittingOutPeriod: "fitting_out_period",
+    offerLapse: "offer_lapse",
+    specialConditions: "special_conditions",
+    leaseTerm: "lease_term",
+    commencementDate: "commencement_date",
+    expiryDate: "expiry_date",
+    handoverCondition: "handover_condition",
+  };
+  const normalized: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(fields || {})) {
+    normalized[aliases[key] || key] = value;
+  }
+
+  return normalized;
 }
 
 function matchValue(text: string, pattern: RegExp) {
@@ -290,6 +393,10 @@ function extractRentalStructure(text: string) {
 }
 
 function extractSpecialConditions(text: string) {
+  if (/\bno special conditions?\b/i.test(text)) {
+    return ["None"];
+  }
+
   const condition = matchValue(text, /\bspecial condition[s]?:?\s*(.+)$/i);
   if (!condition) {
     return [];
@@ -308,17 +415,17 @@ function checkMissingInformation(documentType: DocumentType, extractedFields: Re
   if (
     (documentType === "letter_of_offer" || documentType === "lease_agreement")
     && !/\b(no option to renew|option to renew)\b/i.test(inputText)
-    && !missing.includes("optionToRenew")
+    && !missing.includes("option_to_renew")
   ) {
-    missing.push("optionToRenew");
+    missing.push("option_to_renew");
   }
 
   if (
     (documentType === "letter_of_offer" || documentType === "lease_agreement")
     && !/\b(no special conditions?|special conditions?)\b/i.test(inputText)
-    && !missing.includes("specialConditions")
+    && !missing.includes("special_conditions")
   ) {
-    missing.push("specialConditions");
+    missing.push("special_conditions");
   }
 
   return missing;
@@ -336,10 +443,10 @@ function isEmptyValue(value: unknown) {
 
 function generateFollowUpQuestions(documentType: DocumentType, missingFields: string[]) {
   return missingFields.map((field) => {
-    if (field === "optionToRenew") {
+    if (field === "option_to_renew") {
       return "Please confirm whether there is an option to renew, or mark it as none.";
     }
-    if (field === "specialConditions") {
+    if (field === "special_conditions") {
       return "Please confirm whether there are special conditions, or mark them as none.";
     }
     return `Please provide ${humanFieldName(field)}.`;
@@ -347,10 +454,14 @@ function generateFollowUpQuestions(documentType: DocumentType, missingFields: st
 }
 
 function humanFieldName(field: string) {
-  return field.replace(/([A-Z])/g, " $1").replace(/^./, (letter) => letter.toLowerCase());
+  return field.replaceAll("_", " ").replace(/^./, (letter) => letter.toLowerCase());
 }
 
 function cleanSpecialConditions(value: unknown) {
+  if (typeof value === "string") {
+    return value.trim() ? [value.trim()] : [];
+  }
+
   if (!Array.isArray(value)) {
     return [];
   }
@@ -376,7 +487,7 @@ function flagRiskyInstructions(documentType: DocumentType, fields: Record<string
     });
   }
 
-  if (fields.optionToRenew && !/^none$/i.test(String(fields.optionToRenew)) && documentType !== "quotation") {
+  if (fields.option_to_renew && !/^none$/i.test(String(fields.option_to_renew)) && documentType !== "quotation") {
     flags.push({
       level: "low",
       message: "Option to renew terms were detected. Confirm duration and pricing method before generation.",
@@ -415,6 +526,7 @@ async function analyzeWithAi(
             "Extract only terms explicitly provided by staff or matching CRM context.",
             "Do not invent prices, dates, names, unit numbers, lease terms, or commercial terms.",
             "Do not make legal or commercial decisions.",
+            "Use snake_case placeholder field keys exactly as provided in documentRequirements.",
             "Return JSON only and require human review before generation.",
           ].join(" "),
         },
@@ -426,6 +538,7 @@ async function analyzeWithAi(
             inputText,
             existingCrmData,
             fallbackOutput,
+            documentRequirements,
           }),
         },
       ],
@@ -457,7 +570,7 @@ async function analyzeWithAi(
   try {
     const parsed = JSON.parse(text) as AnalysisOutput;
     const documentType = normalizeDocumentType(parsed.documentType);
-    const extractedFields = parsed.extractedFields || {};
+    const extractedFields = normalizeExtractedFieldKeys(parsed.extractedFields || {});
     const missingFields = checkMissingInformation(documentType, extractedFields, inputText);
     return {
       ...parsed,
@@ -471,7 +584,7 @@ async function analyzeWithAi(
       ],
       needsHumanReview: true,
       aiProvider: model,
-      cleanedSpecialConditions: cleanSpecialConditions(extractedFields.specialConditions),
+      cleanedSpecialConditions: cleanSpecialConditions(extractedFields.special_conditions),
     };
   } catch {
     return fallbackOutput;

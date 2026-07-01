@@ -28,6 +28,56 @@ const documentStatusLabels = {
   sent: "Sent",
   cancelled: "Cancelled",
 };
+const documentPlaceholderDefinitions = {
+  quotation: {
+    required: [
+      "client_name",
+      "event_booking_location",
+      "booking_dates",
+      "price",
+    ],
+  },
+  letter_of_offer: {
+    required: [
+      "date",
+      "tenant_company_name",
+      "tenant_address",
+      "tenant_email",
+      "tenant_name",
+      "unit_number",
+      "floor_area",
+      "permitted_use",
+      "shop_name",
+      "rental_structure",
+      "security_deposit",
+      "advance_rental",
+      "fitting_out_deposit",
+      "stamp_fees",
+      "option_to_renew",
+      "base_rent",
+      "service_charge",
+      "joint_promotion_fund",
+      "rent_free",
+      "fitting_out_period",
+      "offer_lapse",
+      "special_conditions",
+    ],
+  },
+  lease_agreement: {
+    required: [
+      "tenant_name",
+      "unit_number",
+      "permitted_use",
+      "lease_term",
+      "commencement_date",
+      "rental_structure",
+      "security_deposit",
+      "handover_condition",
+      "option_to_renew",
+      "special_conditions",
+    ],
+  },
+};
 const dailyQuotes = [
   { text: "Brevity is the soul of wit.", author: "William Shakespeare", source: "Hamlet" },
   { text: "Sweet are the uses of adversity.", author: "William Shakespeare", source: "As You Like It" },
@@ -89,6 +139,7 @@ const state = {
   agents: [],
   documentRequests: [],
   documentTemplates: [],
+  documentTemplateReadiness: new Map(),
   users: [],
   tradeCategories: readStoredTradeCategories(),
   session: null,
@@ -501,6 +552,7 @@ function mapDocumentRequestFromDb(row) {
   const clientName = approvedData.clientName
     || approvedData.tenantName
     || approvedData.client_name
+    || approvedData.tenant_company_name
     || approvedData.tenant_name
     || "Unnamed client";
   const unitNumber = approvedData.unitNumber || approvedData.unit_number || "";
@@ -566,6 +618,12 @@ async function loadDocumentTemplates() {
   }
 
   state.documentTemplates = (data || []).map(mapDocumentTemplateFromDb);
+  const currentTemplateIds = new Set(state.documentTemplates.map((template) => template.id));
+  for (const templateId of state.documentTemplateReadiness.keys()) {
+    if (!currentTemplateIds.has(templateId)) {
+      state.documentTemplateReadiness.delete(templateId);
+    }
+  }
 }
 
 async function loadDocumentsIfNeeded({ force = false } = {}) {
@@ -780,6 +838,144 @@ async function uploadDocumentTemplateFile(file, documentType) {
     type: file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     size: file.size,
     url: await createSignedUrl(path, documentTemplateBucket),
+  };
+}
+
+function requiredPlaceholdersForType(documentType) {
+  return documentPlaceholderDefinitions[documentType]?.required || [];
+}
+
+function placeholderToken(key) {
+  return `{{${key}}}`;
+}
+
+function placeholderLabel(key) {
+  return key.replaceAll("_", " ");
+}
+
+function formatPlaceholderList(keys, limit = 8) {
+  const list = keys.map(placeholderToken);
+  if (list.length <= limit) {
+    return list.join(", ");
+  }
+
+  return `${list.slice(0, limit).join(", ")} and ${list.length - limit} more`;
+}
+
+function extractPlaceholdersFromText(text) {
+  const rawMatches = [...String(text || "").matchAll(/\{\{\s*([^{}]+?)\s*\}\}/g)]
+    .map((match) => match[1].trim())
+    .filter(Boolean);
+  const exactKeys = [...new Set(rawMatches)];
+  const invalidKeys = exactKeys.filter((key) => /\s/.test(key));
+
+  return {
+    exactKeys,
+    invalidKeys,
+  };
+}
+
+function decodeXmlEntities(text) {
+  return String(text || "")
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&apos;", "'");
+}
+
+function textFromXml(xml) {
+  return decodeXmlEntities(String(xml || "").replace(/<[^>]+>/g, ""));
+}
+
+function readZipText(bytes, start, length) {
+  return new TextDecoder().decode(bytes.slice(start, start + length));
+}
+
+function findZipEndRecord(view) {
+  const minimumEndSize = 22;
+  const searchStart = Math.max(0, view.byteLength - 66000);
+
+  for (let offset = view.byteLength - minimumEndSize; offset >= searchStart; offset -= 1) {
+    if (view.getUint32(offset, true) === 0x06054b50) {
+      return offset;
+    }
+  }
+
+  return -1;
+}
+
+async function inflateZipEntry(bytes) {
+  if (!("DecompressionStream" in window)) {
+    throw new Error("template-inspection-not-supported");
+  }
+
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+async function extractDocxText(arrayBuffer) {
+  const bytes = new Uint8Array(arrayBuffer);
+  const view = new DataView(arrayBuffer);
+  const endOffset = findZipEndRecord(view);
+
+  if (endOffset < 0) {
+    throw new Error("template-not-docx");
+  }
+
+  const entryCount = view.getUint16(endOffset + 10, true);
+  const centralDirectoryOffset = view.getUint32(endOffset + 16, true);
+  let offset = centralDirectoryOffset;
+  const xmlParts = [];
+
+  for (let index = 0; index < entryCount; index += 1) {
+    if (view.getUint32(offset, true) !== 0x02014b50) {
+      break;
+    }
+
+    const method = view.getUint16(offset + 10, true);
+    const compressedSize = view.getUint32(offset + 20, true);
+    const fileNameLength = view.getUint16(offset + 28, true);
+    const extraLength = view.getUint16(offset + 30, true);
+    const commentLength = view.getUint16(offset + 32, true);
+    const localHeaderOffset = view.getUint32(offset + 42, true);
+    const fileName = readZipText(bytes, offset + 46, fileNameLength);
+
+    if (/^word\/.*\.xml$/i.test(fileName)) {
+      const localNameLength = view.getUint16(localHeaderOffset + 26, true);
+      const localExtraLength = view.getUint16(localHeaderOffset + 28, true);
+      const dataStart = localHeaderOffset + 30 + localNameLength + localExtraLength;
+      const compressed = bytes.slice(dataStart, dataStart + compressedSize);
+      let entryBytes = compressed;
+
+      if (method === 8) {
+        entryBytes = await inflateZipEntry(compressed);
+      } else if (method !== 0) {
+        throw new Error("template-compression-unsupported");
+      }
+
+      xmlParts.push(textFromXml(new TextDecoder().decode(entryBytes)));
+    }
+
+    offset += 46 + fileNameLength + extraLength + commentLength;
+  }
+
+  return xmlParts.join("\n");
+}
+
+async function inspectDocxPlaceholdersFromArrayBuffer(arrayBuffer, documentType) {
+  const text = await extractDocxText(arrayBuffer);
+  const placeholders = extractPlaceholdersFromText(text);
+  const required = requiredPlaceholdersForType(documentType);
+  const found = new Set(placeholders.exactKeys);
+  const missing = required.filter((key) => !found.has(key));
+
+  return {
+    status: missing.length ? "needs_setup" : "ready",
+    found: placeholders.exactKeys,
+    missing,
+    invalid: placeholders.invalidKeys,
+    checkedAt: nowIso(),
   };
 }
 
@@ -3716,6 +3912,55 @@ function resolveDocumentTemplateUrl(template) {
   return template.urlPromise;
 }
 
+function templateReadiness(template) {
+  return state.documentTemplateReadiness.get(template.id) || null;
+}
+
+async function checkDocumentTemplateReadiness(template) {
+  if (!template?.id || !template.path) {
+    return;
+  }
+
+  const current = templateReadiness(template);
+  if (current && current.status !== "error") {
+    return;
+  }
+
+  state.documentTemplateReadiness.set(template.id, {
+    status: "checking",
+    found: [],
+    missing: [],
+    invalid: [],
+    checkedAt: "",
+  });
+
+  try {
+    const url = await resolveDocumentTemplateUrl(template);
+    if (!url) {
+      throw new Error("Template download unavailable.");
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error("Template download failed.");
+    }
+
+    const readiness = await inspectDocxPlaceholdersFromArrayBuffer(await response.arrayBuffer(), template.type);
+    state.documentTemplateReadiness.set(template.id, readiness);
+  } catch (error) {
+    state.documentTemplateReadiness.set(template.id, {
+      status: "error",
+      found: [],
+      missing: [],
+      invalid: [],
+      message: recoveryMessage(error, "Template could not be inspected."),
+      checkedAt: nowIso(),
+    });
+  }
+
+  renderDocumentTemplateLibrary();
+}
+
 async function setActiveDocumentTemplate(templateId, documentType) {
   if (!isAdminUser() || !templateId || !documentType) {
     return false;
@@ -4159,6 +4404,29 @@ function renderDocumentTemplateLibrary() {
     meta.className = "document-empty";
     meta.textContent = `${documentTypeLabel(template.type)} · v${template.version} · Updated ${formatDateTime(template.updatedAt)}`;
 
+    const readiness = templateReadiness(template);
+    const readinessLine = document.createElement("p");
+    readinessLine.className = "document-empty";
+
+    if (!readiness) {
+      readinessLine.textContent = "Checking placeholders...";
+      void checkDocumentTemplateReadiness(template);
+    } else if (readiness.status === "checking") {
+      readinessLine.textContent = "Checking placeholders...";
+    } else if (readiness.status === "ready") {
+      readinessLine.textContent = `Template ready: ${requiredPlaceholdersForType(template.type).length} required placeholders found.`;
+    } else if (readiness.status === "needs_setup") {
+      readinessLine.textContent = `Needs setup: missing ${formatPlaceholderList(readiness.missing)}.`;
+    } else {
+      readinessLine.textContent = readiness.message || "Template could not be inspected.";
+    }
+
+    const invalidLine = document.createElement("p");
+    invalidLine.className = "document-empty";
+    if (readiness?.invalid?.length) {
+      invalidLine.textContent = `Rename invalid placeholders with spaces: ${formatPlaceholderList(readiness.invalid)}.`;
+    }
+
     const actions = document.createElement("div");
     actions.className = "document-template-actions";
 
@@ -4192,7 +4460,11 @@ function renderDocumentTemplateLibrary() {
       actions.append(activateButton);
     }
 
-    card.append(heading, meta, actions);
+    card.append(heading, meta, readinessLine);
+    if (invalidLine.textContent) {
+      card.append(invalidLine);
+    }
+    card.append(actions);
     elements.documentTemplateList.append(card);
   });
 }

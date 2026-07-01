@@ -393,8 +393,11 @@ comment on table public.ai_interactions is
   'Audit log for AI classification, extraction, missing-information checks, risk flags, and revisions.';
 
 -- Template placeholders expected by the generator include:
--- {{client_name}}, {{tenant_name}}, {{unit_number}}, {{booking_dates}}, {{price}},
--- {{rental_structure}}, {{lease_term}}, {{commencement_date}}, {{expiry_date}},
--- {{security_deposit}}, {{permitted_use}}, {{service_charge}}, {{gst_treatment}},
--- {{rent_free_period}}, {{fitting_out_period}}, {{handover_condition}},
--- {{option_to_renew}}, and {{special_conditions}}.
+-- Letter of Offer:
+-- {{date}}, {{tenant_company_name}}, {{tenant_address}}, {{tenant_email}},
+-- {{tenant_name}}, {{unit_number}}, {{floor_area}}, {{permitted_use}},
+-- {{shop_name}}, {{rental_structure}}, {{security_deposit}},
+-- {{advance_rental}}, {{fitting_out_deposit}}, {{stamp_fees}},
+-- {{option_to_renew}}, {{base_rent}}, {{service_charge}},
+-- {{joint_promotion_fund}}, {{rent_free}}, {{fitting_out_period}},
+-- {{offer_lapse}}, and {{special_conditions}}.
