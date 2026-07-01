@@ -314,6 +314,80 @@ button {
   overflow: visible;
 }
 
+.documents-panel {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+
+.document-mode-bar {
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.document-mode-bar h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.document-mode-switch {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--mv-white);
+  padding: 4px;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.document-mode-button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.document-mode-button:hover {
+  color: var(--mv-black);
+  background: #fff7f9;
+}
+
+.document-mode-button.active {
+  background: var(--mv-black);
+  color: var(--mv-white);
+  box-shadow: 0 8px 18px rgba(10, 10, 10, 0.1);
+}
+
+.document-templates-view,
+.document-requests-view {
+  min-height: 0;
+  flex: 1;
+}
+
+.document-templates-view {
+  overflow: auto;
+  background: #fffafc;
+}
+
+.template-library-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
 .admin-panel {
   min-height: 0;
   flex: 1;
@@ -791,6 +865,33 @@ label span {
   gap: 12px;
 }
 
+.document-template-library-panel {
+  padding: 24px;
+}
+
+.document-template-form {
+  margin: 0;
+}
+
+.checkbox-label {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.checkbox-label input {
+  width: auto;
+  min-height: 0;
+}
+
+.document-template-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
 .document-json-preview {
   max-height: 260px;
   overflow: auto;
@@ -990,10 +1091,24 @@ label span {
   }
 
   .layout,
-  .admin-panel {
+  .admin-panel,
+  .template-library-layout {
     height: auto;
     grid-template-columns: 1fr;
     overflow: visible;
+  }
+
+  .document-mode-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .document-mode-switch {
+    width: 100%;
+  }
+
+  .document-mode-button {
+    flex: 1;
   }
 
   .prospect-rail {
@@ -1656,6 +1771,8 @@ textarea.field-invalid {
 .workspace,
 .tab-panel:not(.hidden),
 .topbar-actions:not(.hidden),
+.document-templates-view:not(.hidden),
+.document-requests-view:not(.hidden),
 .detail-content:not(.hidden),
 .empty-state:not(.hidden) {
   animation: crm-fade-up var(--motion-medium) var(--motion-ease-out) both;
@@ -1672,6 +1789,7 @@ textarea.field-invalid {
 .danger-button,
 .compact-inline-button,
 .link-button,
+.document-mode-button,
 .attachment-link,
 input[type="file"]::file-selector-button,
 input[type="file"]::-webkit-file-upload-button {

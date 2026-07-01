@@ -1,7 +1,9 @@
 const supabaseUrl = "https://dnmfqcjownhzngjdngdi.supabase.co";
 const supabasePublishableKey = "sb_publishable_hPwolXbHtAbRMoimb_PMuw_PSiYKZGC";
 const storageBucket = "crm-files";
+const documentTemplateBucket = "document-templates";
 const maxAttachmentSize = 10 * 1024 * 1024;
+const maxTemplateSize = 10 * 1024 * 1024;
 const defaultTradeCategories = ["F&B", "F&B Takeaway", "Retail", "Office"];
 const prospectStatusOptions = ["New", "Contacted", "Arranging Viewing", "Viewed", "Negotiating", "Closed"];
 const tradeCategoryStorageKey = "tenantProspectCrmTradeCategories";
@@ -9,6 +11,7 @@ const defaultInteractionNotice = "Timestamp added automatically. Attachments up 
 const defaultUnitDocumentNotice = "Documents are saved securely in Supabase Storage. Keep files under 10 MB each.";
 const defaultAgentInteractionNotice = "Timestamp added automatically.";
 const defaultDocumentNotice = "Set up the Supabase document tables and Edge Functions before generating Word documents.";
+const defaultTemplateNotice = "Upload existing Word documents here, then add placeholders before generation is enabled.";
 const documentTypeLabels = {
   quotation: "Quotation",
   letter_of_offer: "Letter of Offer",
@@ -85,6 +88,7 @@ const state = {
   units: [],
   agents: [],
   documentRequests: [],
+  documentTemplates: [],
   users: [],
   tradeCategories: readStoredTradeCategories(),
   session: null,
@@ -104,7 +108,9 @@ const state = {
   statusFilter: "",
   documentTypeFilter: "",
   documentStatusFilter: "",
+  documentMode: "templates",
   documentLoadError: "",
+  documentTemplateLoadError: "",
   draftDocumentType: "letter_of_offer",
   draftDocumentSourceType: "ai_request",
   draftDocumentRequestText: "",
@@ -112,12 +118,14 @@ const state = {
   showAllProspects: false,
   showAllAgents: false,
   hasLoadedDocuments: false,
+  hasLoadedDocumentTemplates: false,
   isCreatingDocument: false,
   isAnalyzingDocument: false,
   isLoadingProspects: false,
   isLoadingUnits: false,
   isLoadingAgents: false,
   isLoadingDocuments: false,
+  isLoadingDocumentTemplates: false,
   isLoadingTradeCategories: false,
   isLoadingUsers: false,
 };
@@ -174,6 +182,10 @@ const elements = {
   newDocumentButton: document.querySelector("#newDocumentButton"),
   emptyNewDocumentButton: document.querySelector("#emptyNewDocumentButton"),
   documentNotice: document.querySelector("#documentNotice"),
+  documentTemplatesModeButton: document.querySelector("#documentTemplatesModeButton"),
+  documentRequestsModeButton: document.querySelector("#documentRequestsModeButton"),
+  documentTemplatesView: document.querySelector("#documentTemplatesView"),
+  documentRequestsView: document.querySelector("#documentRequestsView"),
   documentSearchInput: document.querySelector("#documentSearchInput"),
   documentTypeFilterInput: document.querySelector("#documentTypeFilterInput"),
   documentStatusFilterInput: document.querySelector("#documentStatusFilterInput"),
@@ -197,6 +209,16 @@ const elements = {
   documentRiskFlagsText: document.querySelector("#documentRiskFlagsText"),
   documentFollowUpQuestionsText: document.querySelector("#documentFollowUpQuestionsText"),
   documentVersionHistoryText: document.querySelector("#documentVersionHistoryText"),
+  documentTemplateLibraryPanel: document.querySelector("#documentTemplateLibraryPanel"),
+  documentTemplateForm: document.querySelector("#documentTemplateForm"),
+  templateDocumentTypeInput: document.querySelector("#templateDocumentTypeInput"),
+  templateNameInput: document.querySelector("#templateNameInput"),
+  templateFileInput: document.querySelector("#templateFileInput"),
+  templateActiveInput: document.querySelector("#templateActiveInput"),
+  uploadTemplateButton: document.querySelector("#uploadTemplateButton"),
+  documentTemplateNotice: document.querySelector("#documentTemplateNotice"),
+  documentTemplateReadOnlyNotice: document.querySelector("#documentTemplateReadOnlyNotice"),
+  documentTemplateList: document.querySelector("#documentTemplateList"),
   importAgentsCsvButton: document.querySelector("#importAgentsCsvButton"),
   agentCsvFileInput: document.querySelector("#agentCsvFileInput"),
   exportAgentsCsvButton: document.querySelector("#exportAgentsCsvButton"),
@@ -500,6 +522,21 @@ function mapDocumentRequestFromDb(row) {
   };
 }
 
+function mapDocumentTemplateFromDb(row) {
+  return {
+    id: row.id,
+    type: row.document_type || "letter_of_offer",
+    name: row.template_name || "Untitled template",
+    path: row.storage_path || "",
+    version: Number(row.version || 1),
+    isActive: Boolean(row.is_active),
+    createdBy: row.created_by || "",
+    updatedBy: row.updated_by || "",
+    createdAt: row.created_at || "",
+    updatedAt: row.updated_at || row.created_at || "",
+  };
+}
+
 async function loadDocumentRequests() {
   const { data, error } = await cloudClient
     .from("document_requests")
@@ -516,6 +553,21 @@ async function loadDocumentRequests() {
     : state.documentRequests[0]?.id || null;
 }
 
+async function loadDocumentTemplates() {
+  const { data, error } = await cloudClient
+    .from("document_templates")
+    .select("*")
+    .order("document_type", { ascending: true })
+    .order("is_active", { ascending: false })
+    .order("version", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  state.documentTemplates = (data || []).map(mapDocumentTemplateFromDb);
+}
+
 async function loadDocumentsIfNeeded({ force = false } = {}) {
   if (!cloudClient || state.isLoadingDocuments || (state.hasLoadedDocuments && !force)) {
     return;
@@ -523,14 +575,20 @@ async function loadDocumentsIfNeeded({ force = false } = {}) {
 
   let loadedSuccessfully = false;
   await loadCloudSection("isLoadingDocuments", async () => {
-    await loadDocumentRequests();
+    await Promise.all([
+      loadDocumentRequests(),
+      loadDocumentTemplates(),
+    ]);
     state.documentLoadError = "";
+    state.documentTemplateLoadError = "";
     loadedSuccessfully = true;
   }, (error) => {
     state.documentLoadError = recoveryMessage(error, "Could not load document requests.");
+    state.documentTemplateLoadError = recoveryMessage(error, "Could not load document templates.");
     setDocumentNotice(recoveryMessage(error, "Could not load document requests."));
   });
   state.hasLoadedDocuments = loadedSuccessfully;
+  state.hasLoadedDocumentTemplates = loadedSuccessfully;
 }
 
 async function loadTradeCategories() {
@@ -617,13 +675,13 @@ function safeFileName(name) {
     || "file";
 }
 
-async function createSignedUrl(path) {
+async function createSignedUrl(path, bucket = storageBucket) {
   if (!path) {
     return "";
   }
 
   const { data, error } = await cloudClient.storage
-    .from(storageBucket)
+    .from(bucket)
     .createSignedUrl(path, 60 * 60);
 
   if (error) {
@@ -686,6 +744,42 @@ async function uploadCloudFile(file, folder) {
     type: file.type || "application/octet-stream",
     size: file.size,
     url: await createSignedUrl(path),
+  };
+}
+
+async function uploadDocumentTemplateFile(file, documentType) {
+  if (!file) {
+    return null;
+  }
+
+  if (file.size > maxTemplateSize) {
+    throw new Error("template-too-large");
+  }
+
+  if (!/\.docx$/i.test(file.name)) {
+    throw new Error("template-must-be-docx");
+  }
+
+  const id = createId();
+  const path = `${documentType}/${id}-${safeFileName(file.name)}`;
+  const { error } = await cloudClient.storage
+    .from(documentTemplateBucket)
+    .upload(path, file, {
+      contentType: file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      upsert: false,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  return {
+    id,
+    path,
+    name: file.name,
+    type: file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    size: file.size,
+    url: await createSignedUrl(path, documentTemplateBucket),
   };
 }
 
@@ -1888,6 +1982,20 @@ function setDocumentNotice(message) {
   window.setTimeout(() => {
     if (elements.documentNotice.textContent === message) {
       setNoticeText(elements.documentNotice, "");
+    }
+  }, 5200);
+}
+
+function setDocumentTemplateNotice(message) {
+  setNoticeText(elements.documentTemplateNotice, message || defaultTemplateNotice);
+
+  if (!message) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (elements.documentTemplateNotice.textContent === message) {
+      setNoticeText(elements.documentTemplateNotice, defaultTemplateNotice);
     }
   }, 5200);
 }
@@ -3365,6 +3473,28 @@ function handleTabKeyboard(event, tab) {
   });
 }
 
+function handleDocumentModeKeyboard(event, mode) {
+  if (!["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "Home", "End"].includes(event.key)) {
+    return;
+  }
+
+  event.preventDefault();
+  const nextMode = event.key === "Home"
+    ? "templates"
+    : event.key === "End"
+    ? "requests"
+    : mode === "templates"
+    ? "requests"
+    : "templates";
+  setDocumentMode(nextMode);
+  window.requestAnimationFrame(() => {
+    const nextButton = nextMode === "templates"
+      ? elements.documentTemplatesModeButton
+      : elements.documentRequestsModeButton;
+    nextButton.focus();
+  });
+}
+
 function handleConfirmDialogKeydown(event) {
   if (elements.confirmDialog.classList.contains("hidden")) {
     return;
@@ -3543,6 +3673,176 @@ function getSelectedDocumentRequest() {
   return state.documentRequests.find((request) => request.id === state.selectedDocumentRequestId) || null;
 }
 
+function isAdminUser() {
+  return state.currentProfile?.role === "admin";
+}
+
+function activeTemplateForType(documentType) {
+  return state.documentTemplates.find((template) => template.type === documentType && template.isActive) || null;
+}
+
+function hasActiveDocumentTemplate() {
+  return state.documentTemplates.some((template) => template.isActive);
+}
+
+function setDocumentMode(mode) {
+  state.documentMode = mode === "requests" ? "requests" : "templates";
+  render();
+}
+
+function nextDocumentTemplateVersion(documentType) {
+  return state.documentTemplates
+    .filter((template) => template.type === documentType)
+    .reduce((highest, template) => Math.max(highest, Number(template.version || 0)), 0) + 1;
+}
+
+function resolveDocumentTemplateUrl(template) {
+  if (!template?.path) {
+    return Promise.resolve("");
+  }
+
+  if (template.url) {
+    return Promise.resolve(template.url);
+  }
+
+  if (!template.urlPromise) {
+    template.urlPromise = createSignedUrl(template.path, documentTemplateBucket).then((url) => {
+      template.url = url;
+      template.urlPromise = null;
+      return url;
+    });
+  }
+
+  return template.urlPromise;
+}
+
+async function setActiveDocumentTemplate(templateId, documentType) {
+  if (!isAdminUser() || !templateId || !documentType) {
+    return false;
+  }
+
+  setDocumentTemplateNotice("Updating active template...");
+
+  try {
+    const { error: deactivateError } = await cloudClient
+      .from("document_templates")
+      .update({
+        is_active: false,
+        updated_by: currentUserId() || null,
+      })
+      .eq("document_type", documentType);
+
+    if (deactivateError) {
+      throw deactivateError;
+    }
+
+    const { error: activateError } = await cloudClient
+      .from("document_templates")
+      .update({
+        is_active: true,
+        updated_by: currentUserId() || null,
+      })
+      .eq("id", templateId);
+
+    if (activateError) {
+      throw activateError;
+    }
+
+    await loadDocumentTemplates();
+    setDocumentTemplateNotice("Active template updated.");
+    renderDocumentModes();
+    renderDocumentTemplateLibrary();
+    return true;
+  } catch (error) {
+    setDocumentTemplateNotice(recoveryMessage(error, "Could not update active template."));
+    return false;
+  }
+}
+
+async function uploadDocumentTemplate(formData) {
+  if (!isAdminUser()) {
+    setDocumentTemplateNotice("Only admins can upload templates.");
+    return;
+  }
+
+  const documentType = String(formData.get("documentType") || "letter_of_offer");
+  const file = elements.templateFileInput.files[0];
+  const templateName = String(formData.get("templateName") || file?.name || "").trim();
+  const shouldUseAsActive = elements.templateActiveInput.checked || !activeTemplateForType(documentType);
+
+  if (!file) {
+    setDocumentTemplateNotice("Choose a Word .docx file first.");
+    return;
+  }
+
+  if (!templateName) {
+    setDocumentTemplateNotice("Add a template name first.");
+    return;
+  }
+
+  setButtonBusy(elements.uploadTemplateButton, true, "Uploading...");
+  setDocumentTemplateNotice("Uploading template...");
+
+  let uploadedTemplate = null;
+
+  try {
+    uploadedTemplate = await uploadDocumentTemplateFile(file, documentType);
+    const version = nextDocumentTemplateVersion(documentType);
+    const { data, error } = await cloudClient
+      .from("document_templates")
+      .insert({
+        document_type: documentType,
+        template_name: templateName,
+        storage_path: uploadedTemplate.path,
+        version,
+        is_active: false,
+        created_by: currentUserId() || null,
+        updated_by: currentUserId() || null,
+      })
+      .select("*")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    await loadDocumentTemplates();
+
+    const activeUpdated = shouldUseAsActive
+      ? await setActiveDocumentTemplate(data.id, documentType)
+      : false;
+
+    if (!shouldUseAsActive) {
+      renderDocumentTemplateLibrary();
+    }
+
+    elements.documentTemplateForm.reset();
+    elements.templateActiveInput.checked = true;
+    setDocumentTemplateNotice(
+      activeUpdated
+        ? `Template uploaded as v${version} and set active.`
+        : shouldUseAsActive
+        ? `Template uploaded as v${version}, but active template was not changed.`
+        : `Template uploaded as v${version}.`,
+    );
+  } catch (error) {
+    if (uploadedTemplate?.path) {
+      await cloudClient.storage.from(documentTemplateBucket).remove([uploadedTemplate.path]);
+    }
+
+    const message = errorText(error);
+    setDocumentTemplateNotice(
+      message === "template-too-large"
+        ? `Template is too large. Please choose a .docx file under ${formatFileSize(maxTemplateSize)}.`
+        : message === "template-must-be-docx"
+        ? "Please upload a Word .docx file."
+        : recoveryMessage(error, "Could not upload template."),
+    );
+  } finally {
+    setButtonBusy(elements.uploadTemplateButton, false);
+  }
+}
+
 function documentAiContext() {
   return {
     prospects: state.prospects.slice(0, 20).map((prospect) => ({
@@ -3612,12 +3912,21 @@ function filteredDocumentRequests() {
 function selectDocumentRequest(id) {
   state.selectedDocumentRequestId = id;
   state.isCreatingDocument = false;
+  state.documentMode = "requests";
   render();
 }
 
 function createDocumentRequestShell() {
+  if (!hasActiveDocumentTemplate()) {
+    state.documentMode = "templates";
+    setDocumentTemplateNotice("Upload and activate a template before creating document requests.");
+    render();
+    return;
+  }
+
   state.selectedDocumentRequestId = null;
   state.isCreatingDocument = true;
+  state.documentMode = "requests";
   state.draftDocumentType = "letter_of_offer";
   state.draftDocumentSourceType = "ai_request";
   state.draftDocumentRequestText = "";
@@ -3788,6 +4097,106 @@ function renderDocumentDetail() {
   updateDocumentAnalyzeButtonState();
 }
 
+function renderDocumentModes() {
+  const showingTemplates = state.documentMode !== "requests";
+  const hasActiveTemplate = hasActiveDocumentTemplate();
+
+  elements.documentTemplatesModeButton.classList.toggle("active", showingTemplates);
+  elements.documentRequestsModeButton.classList.toggle("active", !showingTemplates);
+  elements.documentTemplatesModeButton.setAttribute("aria-selected", String(showingTemplates));
+  elements.documentRequestsModeButton.setAttribute("aria-selected", String(!showingTemplates));
+  elements.documentTemplatesModeButton.tabIndex = showingTemplates ? 0 : -1;
+  elements.documentRequestsModeButton.tabIndex = showingTemplates ? -1 : 0;
+  elements.documentTemplatesView.classList.toggle("hidden", !showingTemplates);
+  elements.documentRequestsView.classList.toggle("hidden", showingTemplates);
+  elements.newDocumentButton.disabled = !hasActiveTemplate;
+  elements.emptyNewDocumentButton.disabled = !hasActiveTemplate;
+  elements.newDocumentButton.title = hasActiveTemplate ? "" : "Upload and activate a template first.";
+  elements.emptyNewDocumentButton.title = hasActiveTemplate ? "" : "Upload and activate a template first.";
+}
+
+function renderDocumentTemplateLibrary() {
+  const isAdmin = isAdminUser();
+  elements.documentTemplateForm.classList.toggle("hidden", !isAdmin);
+  elements.documentTemplateReadOnlyNotice.classList.toggle("hidden", isAdmin);
+  elements.documentTemplateList.replaceChildren();
+
+  if (state.isLoadingDocuments) {
+    appendLoadingSkeleton(elements.documentTemplateList, "Loading document templates...", 3);
+    return;
+  }
+
+  if (state.documentTemplateLoadError) {
+    const empty = document.createElement("p");
+    empty.className = "document-empty";
+    empty.textContent = "Template library could not be loaded.";
+    elements.documentTemplateList.append(empty);
+    return;
+  }
+
+  if (state.documentTemplates.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "document-empty";
+    empty.textContent = "No templates uploaded yet. Start by uploading an existing Word document.";
+    elements.documentTemplateList.append(empty);
+    return;
+  }
+
+  state.documentTemplates.forEach((template) => {
+    const card = document.createElement("article");
+    card.className = "document-card";
+
+    const heading = document.createElement("div");
+    heading.className = "document-card-heading";
+    const title = document.createElement("strong");
+    const status = document.createElement("span");
+    title.textContent = template.name;
+    status.className = `status-pill ${template.isActive ? "" : "inactive"}`.trim();
+    status.textContent = template.isActive ? "Active" : "Inactive";
+    heading.append(title, status);
+
+    const meta = document.createElement("p");
+    meta.className = "document-empty";
+    meta.textContent = `${documentTypeLabel(template.type)} · v${template.version} · Updated ${formatDateTime(template.updatedAt)}`;
+
+    const actions = document.createElement("div");
+    actions.className = "document-template-actions";
+
+    const downloadLink = document.createElement("a");
+    downloadLink.className = "attachment-link";
+    downloadLink.href = "#";
+    downloadLink.target = "_blank";
+    downloadLink.rel = "noopener";
+    downloadLink.textContent = "Preparing download...";
+    downloadLink.setAttribute("aria-disabled", "true");
+    resolveDocumentTemplateUrl(template).then((url) => {
+      if (!url) {
+        downloadLink.textContent = "Download unavailable";
+        return;
+      }
+
+      downloadLink.href = url;
+      downloadLink.removeAttribute("aria-disabled");
+      downloadLink.textContent = "Download template";
+    });
+    actions.append(downloadLink);
+
+    if (isAdmin && !template.isActive) {
+      const activateButton = document.createElement("button");
+      activateButton.className = "secondary-button compact-inline-button";
+      activateButton.type = "button";
+      activateButton.textContent = "Make Active";
+      activateButton.addEventListener("click", () => {
+        setActiveDocumentTemplate(template.id, template.type);
+      });
+      actions.append(activateButton);
+    }
+
+    card.append(heading, meta, actions);
+    elements.documentTemplateList.append(card);
+  });
+}
+
 function render() {
   const activeTab = activeVisibleTab();
   renderTabs();
@@ -3822,9 +4231,11 @@ function render() {
   }
 
   if (activeTab === "documents") {
+    renderDocumentModes();
     renderDocumentStats();
     renderDocumentRequestList();
     renderDocumentDetail();
+    renderDocumentTemplateLibrary();
     return;
   }
 
@@ -3933,11 +4344,13 @@ async function refreshAppData() {
       state.units = [];
       state.agents = [];
       state.documentRequests = [];
+      state.documentTemplates = [];
       state.users = [];
       state.isLoadingProspects = false;
       state.isLoadingUnits = false;
       state.isLoadingAgents = false;
       state.isLoadingDocuments = false;
+      state.isLoadingDocumentTemplates = false;
       state.isLoadingTradeCategories = false;
       state.isLoadingUsers = false;
       showSignedOut("Your account exists, but access has not been approved yet.");
@@ -5093,6 +5506,10 @@ elements.newUnitButton.addEventListener("click", createUnit);
 elements.emptyNewUnitButton.addEventListener("click", createUnit);
 elements.newAgentButton.addEventListener("click", createAgent);
 elements.emptyNewAgentButton.addEventListener("click", createAgent);
+elements.documentTemplatesModeButton.addEventListener("click", () => setDocumentMode("templates"));
+elements.documentRequestsModeButton.addEventListener("click", () => setDocumentMode("requests"));
+elements.documentTemplatesModeButton.addEventListener("keydown", (event) => handleDocumentModeKeyboard(event, "templates"));
+elements.documentRequestsModeButton.addEventListener("keydown", (event) => handleDocumentModeKeyboard(event, "requests"));
 elements.newDocumentButton.addEventListener("click", createDocumentRequestShell);
 elements.emptyNewDocumentButton.addEventListener("click", createDocumentRequestShell);
 elements.analyzeDocumentButton.addEventListener("click", analyzeDocumentRequest);
@@ -5154,6 +5571,11 @@ elements.inviteUserForm.addEventListener("submit", (event) => {
 elements.tradeCategoryForm.addEventListener("submit", (event) => {
   event.preventDefault();
   addTradeCategory(new FormData(elements.tradeCategoryForm));
+});
+
+elements.documentTemplateForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  uploadDocumentTemplate(new FormData(elements.documentTemplateForm));
 });
 
 const debouncedRenderProspectList = debounce(renderProspectList, 120);
