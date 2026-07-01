@@ -74,9 +74,11 @@ The Documents tab has been added as an internal CRM module shell. Live AI analys
 1. Run `supabase/sql/ai_document_generator_setup.sql` in the Supabase SQL Editor.
 2. Upload `.docx` templates through **Documents → Templates** in the CRM.
 3. For Letter of Offer templates, use the required placeholders shown in the Template Library readiness check, including `{{tenant_company_name}}`, `{{shop_name}}`, `{{permitted_use}}`, and `{{floor_area}}`.
-4. Deploy the `supabase/functions/ai-document-agent` Edge Function.
+4. Deploy the Supabase Edge Functions:
+   - `supabase/functions/ai-document-agent`
+   - `supabase/functions/generate-document`
 5. Add the AI provider key as a Supabase Edge Function secret, for example `OPENAI_API_KEY`. Do not place AI keys in `app.js`.
-6. Deploy the document generation Edge Function before enabling the Generate button.
+6. Deploy the document generation Edge Function before testing the Generate button.
 
 The generator should merge only staff-confirmed `approved_data` into templates. AI output is for extraction, missing-information checks, wording cleanup, risk flags, and revision suggestions; staff must confirm the structured data before any Word document is generated.
 

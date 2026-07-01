@@ -865,6 +865,30 @@ label span {
   gap: 12px;
 }
 
+.document-approved-fields {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.document-approved-fields label {
+  display: grid;
+  gap: 5px;
+}
+
+.document-approved-fields span {
+  margin: 0;
+}
+
+.document-approved-fields input,
+.document-approved-fields textarea {
+  min-height: 36px;
+}
+
+.document-approved-fields textarea {
+  resize: vertical;
+}
+
 .document-template-library-panel {
   padding: 24px;
 }

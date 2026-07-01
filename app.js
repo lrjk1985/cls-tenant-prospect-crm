@@ -2,6 +2,7 @@ const supabaseUrl = "https://dnmfqcjownhzngjdngdi.supabase.co";
 const supabasePublishableKey = "sb_publishable_hPwolXbHtAbRMoimb_PMuw_PSiYKZGC";
 const storageBucket = "crm-files";
 const documentTemplateBucket = "document-templates";
+const generatedDocumentBucket = "generated-documents";
 const maxAttachmentSize = 10 * 1024 * 1024;
 const maxTemplateSize = 10 * 1024 * 1024;
 const defaultTradeCategories = ["F&B", "F&B Takeaway", "Retail", "Office"];
@@ -78,6 +79,37 @@ const documentPlaceholderDefinitions = {
     ],
   },
 };
+const documentFieldLabels = {
+  date: "Date",
+  tenant_company_name: "Tenant company name",
+  tenant_address: "Tenant address",
+  tenant_email: "Tenant email",
+  tenant_name: "Tenant contact name",
+  unit_number: "Unit number",
+  floor_area: "Floor area",
+  permitted_use: "Permitted use",
+  shop_name: "Shop name",
+  rental_structure: "Rental structure",
+  security_deposit: "Security deposit",
+  advance_rental: "Advance rental",
+  fitting_out_deposit: "Fitting-out deposit",
+  stamp_fees: "Stamp fees",
+  option_to_renew: "Option to renew",
+  base_rent: "Base rent",
+  service_charge: "Service charge",
+  joint_promotion_fund: "Joint promotion fund",
+  rent_free: "Rent-free period",
+  fitting_out_period: "Fitting-out period",
+  offer_lapse: "Offer lapse",
+  special_conditions: "Special conditions",
+};
+const multilineDocumentFields = new Set([
+  "tenant_address",
+  "tenant_email",
+  "rental_structure",
+  "option_to_renew",
+  "special_conditions",
+]);
 const dailyQuotes = [
   { text: "Brevity is the soul of wit.", author: "William Shakespeare", source: "Hamlet" },
   { text: "Sweet are the uses of adversity.", author: "William Shakespeare", source: "As You Like It" },
@@ -166,12 +198,14 @@ const state = {
   draftDocumentSourceType: "ai_request",
   draftDocumentRequestText: "",
   documentAnalysis: null,
+  documentReviewData: {},
   showAllProspects: false,
   showAllAgents: false,
   hasLoadedDocuments: false,
   hasLoadedDocumentTemplates: false,
   isCreatingDocument: false,
   isAnalyzingDocument: false,
+  isGeneratingDocument: false,
   isLoadingProspects: false,
   isLoadingUnits: false,
   isLoadingAgents: false,
@@ -256,6 +290,7 @@ const elements = {
   analyzeDocumentButton: document.querySelector("#analyzeDocumentButton"),
   generateDocumentButton: document.querySelector("#generateDocumentButton"),
   documentExtractedFieldsText: document.querySelector("#documentExtractedFieldsText"),
+  documentApprovedFieldsForm: document.querySelector("#documentApprovedFieldsForm"),
   documentMissingFieldsText: document.querySelector("#documentMissingFieldsText"),
   documentRiskFlagsText: document.querySelector("#documentRiskFlagsText"),
   documentFollowUpQuestionsText: document.querySelector("#documentFollowUpQuestionsText"),
@@ -564,6 +599,8 @@ function mapDocumentRequestFromDb(row) {
     sourceType: row.source_type || "",
     clientName,
     unitNumber,
+    approvedData,
+    aiExtractedData: row.ai_extracted_data || {},
     originalRequestText: row.original_request_text || "",
     missingFields: Array.isArray(row.missing_fields) ? row.missing_fields : [],
     riskFlags: Array.isArray(row.risk_flags) ? row.risk_flags : [],
@@ -845,6 +882,10 @@ function requiredPlaceholdersForType(documentType) {
   return documentPlaceholderDefinitions[documentType]?.required || [];
 }
 
+function documentFieldLabel(key) {
+  return documentFieldLabels[key] || placeholderLabel(key);
+}
+
 function placeholderToken(key) {
   return `{{${key}}}`;
 }
@@ -860,6 +901,55 @@ function formatPlaceholderList(keys, limit = 8) {
   }
 
   return `${list.slice(0, limit).join(", ")} and ${list.length - limit} more`;
+}
+
+function formatDocumentFieldValue(value) {
+  if (value === undefined || value === null) {
+    return "";
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return "";
+    }
+
+    if (value.every((item) => item && typeof item === "object" && "year" in item && "rent" in item)) {
+      return value
+        .map((item) => `Year ${item.year}: ${item.rent}`)
+        .join("\n");
+    }
+
+    return value.map((item) => {
+      if (typeof item === "string") {
+        return item;
+      }
+
+      return JSON.stringify(item);
+    }).join("\n");
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value, null, 2);
+  }
+
+  return String(value);
+}
+
+function normalizeDocumentFieldData(fields = {}) {
+  const normalized = {};
+
+  Object.entries(fields || {}).forEach(([key, value]) => {
+    normalized[key] = formatDocumentFieldValue(value);
+  });
+
+  return normalized;
+}
+
+function missingRequiredDocumentFields(documentType, data) {
+  return requiredPlaceholdersForType(documentType).filter((key) => {
+    const value = data?.[key];
+    return value === undefined || value === null || String(value).trim() === "";
+  });
 }
 
 function extractPlaceholdersFromText(text) {
@@ -4132,6 +4222,48 @@ function listMessages(items, emptyMessage) {
   }).join("\n");
 }
 
+function renderDocumentApprovedFields(documentType, data, disabled = false) {
+  elements.documentApprovedFieldsForm.replaceChildren();
+
+  if (documentType !== "letter_of_offer") {
+    const empty = document.createElement("p");
+    empty.className = "document-empty";
+    empty.textContent = "Letter of Offer generation is enabled first. Other document types will follow after this flow is tested.";
+    elements.documentApprovedFieldsForm.append(empty);
+    return;
+  }
+
+  requiredPlaceholdersForType(documentType).forEach((key) => {
+    const label = document.createElement("label");
+    const labelText = document.createElement("span");
+    labelText.textContent = documentFieldLabel(key);
+
+    const field = multilineDocumentFields.has(key)
+      ? document.createElement("textarea")
+      : document.createElement("input");
+    field.name = key;
+    field.value = data?.[key] || "";
+    field.disabled = disabled;
+    if (field.tagName === "TEXTAREA") {
+      field.rows = key === "rental_structure" || key === "special_conditions" ? 4 : 3;
+    } else {
+      field.type = "text";
+    }
+
+    field.addEventListener("input", (event) => {
+      state.documentReviewData[key] = event.target.value;
+      const missing = missingRequiredDocumentFields(documentType, state.documentReviewData);
+      elements.documentMissingFieldsText.textContent = missing.length
+        ? missing.map(documentFieldLabel).join("\n")
+        : "All required confirmed fields are complete.";
+      updateGenerateDocumentButtonState(documentType);
+    });
+
+    label.append(labelText, field);
+    elements.documentApprovedFieldsForm.append(label);
+  });
+}
+
 function documentRequestSearchText(request) {
   return [
     documentTypeLabel(request.type),
@@ -4176,6 +4308,7 @@ function createDocumentRequestShell() {
   state.draftDocumentSourceType = "ai_request";
   state.draftDocumentRequestText = "";
   state.documentAnalysis = null;
+  state.documentReviewData = {};
   elements.documentStarterForm.reset();
   setNoticeText(elements.documentStarterNotice, defaultDocumentNotice);
   render();
@@ -4184,6 +4317,18 @@ function createDocumentRequestShell() {
 function updateDocumentAnalyzeButtonState() {
   const hasText = Boolean(state.draftDocumentRequestText.trim());
   elements.analyzeDocumentButton.disabled = state.isAnalyzingDocument || !state.isCreatingDocument || !hasText;
+}
+
+function updateGenerateDocumentButtonState(documentType = state.draftDocumentType) {
+  const missing = missingRequiredDocumentFields(documentType, state.documentReviewData);
+  const activeTemplate = activeTemplateForType(documentType);
+  elements.generateDocumentButton.disabled = (
+    state.isGeneratingDocument
+    || !state.isCreatingDocument
+    || documentType !== "letter_of_offer"
+    || missing.length > 0
+    || !activeTemplate
+  );
 }
 
 async function analyzeDocumentRequest() {
@@ -4220,6 +4365,7 @@ async function analyzeDocumentRequest() {
 
     state.documentAnalysis = data;
     state.draftDocumentType = data.documentType || state.draftDocumentType;
+    state.documentReviewData = normalizeDocumentFieldData(data.extractedFields || {});
     setNoticeText(
       elements.documentStarterNotice,
       data.aiUnavailableMessage
@@ -4228,6 +4374,7 @@ async function analyzeDocumentRequest() {
     );
   } catch (error) {
     state.documentAnalysis = null;
+    state.documentReviewData = {};
     setNoticeText(
       elements.documentStarterNotice,
       recoveryMessage(error, "Could not analyze the document request. The ai-document-agent function may not be deployed yet."),
@@ -4236,6 +4383,61 @@ async function analyzeDocumentRequest() {
     state.isAnalyzingDocument = false;
     setButtonBusy(elements.analyzeDocumentButton, false);
     updateDocumentAnalyzeButtonState();
+    renderDocumentDetail();
+  }
+}
+
+async function generateDocumentRequest() {
+  const documentType = state.draftDocumentType || "letter_of_offer";
+  const missing = missingRequiredDocumentFields(documentType, state.documentReviewData);
+
+  if (documentType !== "letter_of_offer") {
+    setNoticeText(elements.documentStarterNotice, "Generation is currently enabled for Letter of Offer templates first.");
+    return;
+  }
+
+  if (missing.length) {
+    setNoticeText(elements.documentStarterNotice, `Complete these fields first: ${missing.map(documentFieldLabel).join(", ")}.`);
+    renderDocumentDetail();
+    return;
+  }
+
+  state.isGeneratingDocument = true;
+  setButtonBusy(elements.generateDocumentButton, true, "Generating...");
+  setNoticeText(elements.documentStarterNotice, "Generating Word document...");
+  updateGenerateDocumentButtonState(documentType);
+
+  try {
+    const { data, error } = await cloudClient.functions.invoke("generate-document", {
+      body: {
+        documentType,
+        sourceType: state.draftDocumentSourceType,
+        originalRequestText: state.draftDocumentRequestText,
+        structuredData: state.documentReviewData,
+        aiAnalysis: state.documentAnalysis,
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    if (data?.error) {
+      throw new Error(data.error);
+    }
+
+    setNoticeText(elements.documentStarterNotice, "Document generated and saved as v1.");
+    await loadDocumentsIfNeeded({ force: true });
+    state.selectedDocumentRequestId = data?.documentRequest?.id || state.documentRequests[0]?.id || null;
+    state.isCreatingDocument = false;
+    state.documentAnalysis = null;
+    state.documentReviewData = {};
+    render();
+  } catch (error) {
+    setNoticeText(elements.documentStarterNotice, recoveryMessage(error, "Could not generate the Word document."));
+  } finally {
+    state.isGeneratingDocument = false;
+    setButtonBusy(elements.generateDocumentButton, false);
     renderDocumentDetail();
   }
 }
@@ -4326,9 +4528,18 @@ function renderDocumentDetail() {
   const missingFields = selected?.missingFields || analysis?.missingFields || [];
   const riskFlags = selected?.riskFlags || analysis?.riskFlags || [];
   const followUpQuestions = analysis?.followUpQuestions || [];
-  elements.documentExtractedFieldsText.textContent = prettyJson(analysis?.extractedFields);
-  elements.documentMissingFieldsText.textContent = missingFields.length
-    ? listMessages(missingFields, "")
+  const reviewData = selected
+    ? normalizeDocumentFieldData(selected.approvedData || selected.aiExtractedData || {})
+    : state.documentReviewData;
+  const confirmedMissingFields = state.isCreatingDocument
+    ? missingRequiredDocumentFields(type, reviewData)
+    : missingFields;
+  elements.documentExtractedFieldsText.textContent = prettyJson(selected?.aiExtractedData || analysis?.extractedFields);
+  renderDocumentApprovedFields(type, reviewData, Boolean(selected));
+  elements.documentMissingFieldsText.textContent = confirmedMissingFields.length
+    ? confirmedMissingFields.map((field) => documentFieldLabel(typeof field === "string" ? field : field.field || field.message || String(field))).join("\n")
+    : state.isCreatingDocument
+    ? "All required confirmed fields are complete."
     : "No missing-information check has been recorded yet.";
   elements.documentRiskFlagsText.textContent = riskFlags.length
     ? listMessages(riskFlags, "")
@@ -4336,10 +4547,34 @@ function renderDocumentDetail() {
   elements.documentFollowUpQuestionsText.textContent = followUpQuestions.length
     ? listMessages(followUpQuestions, "")
     : "No follow-up questions yet.";
-  elements.documentVersionHistoryText.textContent = selected?.latestVersionNumber
-    ? `Latest generated version: v${selected.latestVersionNumber}`
-    : "No generated versions yet.";
+  elements.documentVersionHistoryText.replaceChildren();
+  if (selected?.latestVersionNumber) {
+    elements.documentVersionHistoryText.append(`Latest generated version: v${selected.latestVersionNumber}`);
+    if (selected.latestFilePath) {
+      const downloadLink = document.createElement("a");
+      downloadLink.className = "attachment-link";
+      downloadLink.href = "#";
+      downloadLink.target = "_blank";
+      downloadLink.rel = "noopener";
+      downloadLink.textContent = "Preparing download...";
+      downloadLink.setAttribute("aria-disabled", "true");
+      createSignedUrl(selected.latestFilePath, generatedDocumentBucket).then((url) => {
+        if (!url) {
+          downloadLink.textContent = "Download unavailable";
+          return;
+        }
+
+        downloadLink.href = url;
+        downloadLink.removeAttribute("aria-disabled");
+        downloadLink.textContent = "Download latest version";
+      });
+      elements.documentVersionHistoryText.append(downloadLink);
+    }
+  } else {
+    elements.documentVersionHistoryText.textContent = "No generated versions yet.";
+  }
   updateDocumentAnalyzeButtonState();
+  updateGenerateDocumentButtonState(type);
 }
 
 function renderDocumentModes() {
@@ -5785,6 +6020,7 @@ elements.documentRequestsModeButton.addEventListener("keydown", (event) => handl
 elements.newDocumentButton.addEventListener("click", createDocumentRequestShell);
 elements.emptyNewDocumentButton.addEventListener("click", createDocumentRequestShell);
 elements.analyzeDocumentButton.addEventListener("click", analyzeDocumentRequest);
+elements.generateDocumentButton.addEventListener("click", generateDocumentRequest);
 elements.importAgentsCsvButton.addEventListener("click", () => elements.agentCsvFileInput.click());
 elements.agentCsvFileInput.addEventListener("change", (event) => {
   importAgentsCsvFile(event.target.files[0]);
@@ -5850,6 +6086,10 @@ elements.documentTemplateForm.addEventListener("submit", (event) => {
   uploadDocumentTemplate(new FormData(elements.documentTemplateForm));
 });
 
+elements.documentApprovedFieldsForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+});
+
 const debouncedRenderProspectList = debounce(renderProspectList, 120);
 const debouncedRenderUnitList = debounce(renderUnitList, 120);
 const debouncedRenderAgentList = debounce(renderAgentList, 120);
@@ -5893,6 +6133,7 @@ elements.documentStatusFilterInput.addEventListener("change", (event) => {
 elements.documentTypeInput.addEventListener("change", (event) => {
   state.draftDocumentType = event.target.value;
   state.documentAnalysis = null;
+  state.documentReviewData = {};
   renderDocumentDetail();
 });
 
@@ -5903,7 +6144,9 @@ elements.documentSourceTypeInput.addEventListener("change", (event) => {
 elements.documentRequestTextInput.addEventListener("input", (event) => {
   state.draftDocumentRequestText = event.target.value;
   state.documentAnalysis = null;
+  state.documentReviewData = {};
   updateDocumentAnalyzeButtonState();
+  updateGenerateDocumentButtonState();
 });
 
 elements.contactDateInput.addEventListener("input", (event) => {
