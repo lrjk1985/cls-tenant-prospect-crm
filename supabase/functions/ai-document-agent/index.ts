@@ -63,6 +63,15 @@ const documentRequirements: Record<Exclude<DocumentType, "revision_request" | "u
     "special_conditions",
   ],
 };
+const documentCurrencyFields = new Set([
+  "security_deposit",
+  "advance_rental",
+  "fitting_out_deposit",
+  "stamp_fees",
+  "base_rent",
+  "service_charge",
+  "joint_promotion_fund",
+]);
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
@@ -225,7 +234,7 @@ function classifyDocumentRequest(inputText: string, hint: DocumentType): Documen
 
 function analyzeWithRules(inputText: string, hint: DocumentType): AnalysisOutput {
   const documentType = classifyDocumentRequest(inputText, hint);
-  const extractedFields = extractDocumentFields(documentType, inputText);
+  const extractedFields = normalizeExtractedFieldKeys(extractDocumentFields(documentType, inputText));
   const missingFields = checkMissingInformation(documentType, extractedFields, inputText);
   const riskFlags = flagRiskyInstructions(documentType, extractedFields, inputText);
   const followUpQuestions = generateFollowUpQuestions(documentType, missingFields);
@@ -278,6 +287,8 @@ function extractDocumentFields(documentType: DocumentType, inputText: string) {
   const optionToRenew = /\bno option to renew\b/i.test(text)
     ? "None"
     : matchValue(text, /\boption to renew\s+(?:is\s+)?([^.,]+)/i);
+  const loiRentalStructure = formatLetterOfOfferRentalStructure(leaseTerm || "", commencementDate || "", expiryDate || "");
+  const loiOptionToRenew = formatLetterOfOfferOptionToRenew(optionToRenew || "");
   const handoverCondition = matchValue(text, /\bhandover\s+(?:is\s+)?([^.,]+)/i);
 
   if (documentType === "quotation") {
@@ -295,12 +306,12 @@ function extractDocumentFields(documentType: DocumentType, inputText: string) {
     assignPresent(fields, "floor_area", floorArea);
     assignPresent(fields, "permitted_use", permittedUse);
     assignPresent(fields, "shop_name", shopName);
-    assignPresent(fields, "rental_structure", rentalStructure.length ? rentalStructure : leaseTerm || undefined);
+    assignPresent(fields, "rental_structure", loiRentalStructure || (rentalStructure.length ? rentalStructure : leaseTerm || undefined));
     assignPresent(fields, "security_deposit", securityDeposit);
     assignPresent(fields, "advance_rental", advanceRental);
     assignPresent(fields, "fitting_out_deposit", fittingOutDeposit);
     assignPresent(fields, "stamp_fees", stampFees);
-    assignPresent(fields, "option_to_renew", optionToRenew);
+    assignPresent(fields, "option_to_renew", loiOptionToRenew || optionToRenew);
     assignPresent(fields, "base_rent", baseRent || price);
     assignPresent(fields, "service_charge", serviceCharge);
     assignPresent(fields, "joint_promotion_fund", jointPromotionFund);
@@ -365,7 +376,61 @@ function normalizeExtractedFieldKeys(fields: Record<string, unknown>) {
   const normalized: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(fields || {})) {
-    normalized[aliases[key] || key] = value;
+    const normalizedKey = aliases[key] || key;
+    normalized[normalizedKey] = normalizeDocumentFieldValue(normalizedKey, value);
+  }
+
+  return normalizeLetterOfOfferWording(normalized);
+}
+
+function normalizeDocumentFieldValue(key: string, value: unknown) {
+  const formatted = formatDocumentValue(value);
+  return documentCurrencyFields.has(key) ? withSingaporeDollarPrefix(formatted) : formatted;
+}
+
+function formatDocumentValue(value: unknown) {
+  if (value === undefined || value === null) {
+    return "";
+  }
+  if (Array.isArray(value)) {
+    if (value.every((item) => item && typeof item === "object" && "year" in item && "rent" in item)) {
+      return value.map((item) => `Year ${item.year}: ${item.rent}`).join("\n");
+    }
+    return value.map((item) => typeof item === "string" ? item : JSON.stringify(item)).join("\n");
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value, null, 2);
+  }
+  return String(value);
+}
+
+function withSingaporeDollarPrefix(value: string) {
+  return String(value || "").replace(/(^|[^\w$])(?:S\$|\$)?\s*(\d[\d,.]*(?:\.\d+)?)/g, (match, prefix, number, offset, fullText) => {
+    const after = fullText.slice(offset + match.length, offset + match.length + 12);
+    if (/^\s*(?:months?|years?)\b/i.test(after)) {
+      return match;
+    }
+    if (/S\$\s*\d/i.test(match)) {
+      return match.replace(/S\$\s*/i, "S$");
+    }
+    return `${prefix}S$${number}`;
+  });
+}
+
+function normalizeLetterOfOfferWording(fields: Record<string, unknown>) {
+  const rentalStructure = formatLetterOfOfferRentalStructure(
+    String(fields.rental_structure || ""),
+    String(fields.commencement_date || ""),
+    String(fields.expiry_date || ""),
+  );
+  const optionToRenew = formatLetterOfOfferOptionToRenew(String(fields.option_to_renew || ""));
+  const normalized = { ...fields };
+
+  if (rentalStructure || "rental_structure" in fields) {
+    normalized.rental_structure = rentalStructure;
+  }
+  if (optionToRenew || "option_to_renew" in fields) {
+    normalized.option_to_renew = optionToRenew;
   }
 
   return normalized;
@@ -374,6 +439,67 @@ function normalizeExtractedFieldKeys(fields: Record<string, unknown>) {
 function matchValue(text: string, pattern: RegExp) {
   const match = text.match(pattern);
   return match?.[1]?.trim().replace(/\s+/g, " ");
+}
+
+function formatLetterOfOfferRentalStructure(value = "", commencementDate = "", expiryDate = "") {
+  const text = String(value || "").trim();
+  if (!text || /commencing from the expiry of the fitting out period/i.test(text)) {
+    return text;
+  }
+
+  const term = formatYearTerm(text);
+  const commencement = commencementDate || dateAfterKeyword(text, /\b(?:i\.e\.|from|commencing)\s+(\d{1,2}\s+[a-z]+\s+\d{4})/i);
+  const expiry = expiryDate || dateAfterKeyword(text, /\b(?:to|until|expiry|expiring on)\s+(\d{1,2}\s+[a-z]+\s+\d{4})/i);
+
+  if (!term || !commencement || !expiry) {
+    return text;
+  }
+
+  return `${term}, commencing from the expiry of the Fitting Out Period, i.e. ${commencement} ("Commencement Date") to ${expiry}.`;
+}
+
+function formatLetterOfOfferOptionToRenew(value = "") {
+  const text = String(value || "").trim();
+  if (!text || /^none$/i.test(text) || /prevailing market rental/i.test(text)) {
+    return text;
+  }
+
+  const term = formatYearTerm(text);
+  if (!term) {
+    return text;
+  }
+
+  return `${term}, at the prevailing market rental and at such terms and conditions as shall be determined by the Landlord.`;
+}
+
+function formatYearTerm(value: string) {
+  const match = String(value || "").match(/\b(\d+)\s*(?:\(\s*\d+\s*\))?\s*years?\b/i);
+  if (!match) {
+    return "";
+  }
+
+  const years = Number(match[1]);
+  return `${numberWord(years)} (${years}) ${years === 1 ? "year" : "years"}`;
+}
+
+function numberWord(value: number) {
+  const words: Record<number, string> = {
+    1: "One",
+    2: "Two",
+    3: "Three",
+    4: "Four",
+    5: "Five",
+    6: "Six",
+    7: "Seven",
+    8: "Eight",
+    9: "Nine",
+    10: "Ten",
+  };
+  return words[value] || String(value);
+}
+
+function dateAfterKeyword(value: string, pattern: RegExp) {
+  return String(value || "").match(pattern)?.[1]?.trim() || "";
 }
 
 function extractRentalStructure(text: string) {
@@ -527,6 +653,9 @@ async function analyzeWithAi(
             "Do not invent prices, dates, names, unit numbers, lease terms, or commercial terms.",
             "Do not make legal or commercial decisions.",
             "Use snake_case placeholder field keys exactly as provided in documentRequirements.",
+            "For Letter of Offer rental_structure, use this wording only when the request provides lease term, commencement date, and expiry date: Three (3) years, commencing from the expiry of the Fitting Out Period, i.e. 15 August 2026 (\"Commencement Date\") to 14 August 2029. Replace the dates and duration only with explicitly provided values.",
+            "For Letter of Offer option_to_renew, if an option duration is provided, use this wording: Three (3) years, at the prevailing market rental and at such terms and conditions as shall be determined by the Landlord. Replace the duration only with explicitly provided values. If the request clearly says there is no option, return None.",
+            "For Letter of Offer money fields security_deposit, advance_rental, fitting_out_deposit, stamp_fees, base_rent, service_charge, and joint_promotion_fund, prefix money amounts with S$.",
             "Return JSON only and require human review before generation.",
           ].join(" "),
         },

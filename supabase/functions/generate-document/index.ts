@@ -24,6 +24,15 @@ const corsHeaders = {
 const documentTemplateBucket = "document-templates";
 const generatedDocumentBucket = "generated-documents";
 const docxContentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const documentCurrencyFields = new Set([
+  "security_deposit",
+  "advance_rental",
+  "fitting_out_deposit",
+  "stamp_fees",
+  "base_rent",
+  "service_charge",
+  "joint_promotion_fund",
+]);
 const documentRequirements: Record<DocumentType, string[]> = {
   quotation: ["client_name", "event_booking_location", "booking_dates", "price"],
   letter_of_offer: [
@@ -228,14 +237,18 @@ function normalizeExtractedFieldKeys(fields: Record<string, unknown>) {
     fittingOutPeriod: "fitting_out_period",
     offerLapse: "offer_lapse",
     specialConditions: "special_conditions",
+    leaseTerm: "lease_term",
+    commencementDate: "commencement_date",
+    expiryDate: "expiry_date",
   };
   const normalized: Record<string, string> = {};
 
   for (const [key, value] of Object.entries(fields || {})) {
-    normalized[aliases[key] || key] = formatDocumentValue(value);
+    const normalizedKey = aliases[key] || key;
+    normalized[normalizedKey] = normalizeDocumentFieldValue(normalizedKey, value);
   }
 
-  return normalized;
+  return normalizeLetterOfOfferWording(normalized);
 }
 
 function formatDocumentValue(value: unknown) {
@@ -252,6 +265,100 @@ function formatDocumentValue(value: unknown) {
     return JSON.stringify(value, null, 2);
   }
   return String(value);
+}
+
+function normalizeDocumentFieldValue(key: string, value: unknown) {
+  const formatted = formatDocumentValue(value);
+  return documentCurrencyFields.has(key) ? withSingaporeDollarPrefix(formatted) : formatted;
+}
+
+function withSingaporeDollarPrefix(value: string) {
+  return String(value || "").replace(/(^|[^\w$])(?:S\$|\$)?\s*(\d[\d,.]*(?:\.\d+)?)/g, (match, prefix, number, offset, fullText) => {
+    const after = fullText.slice(offset + match.length, offset + match.length + 12);
+    if (/^\s*(?:months?|years?)\b/i.test(after)) {
+      return match;
+    }
+    if (/S\$\s*\d/i.test(match)) {
+      return match.replace(/S\$\s*/i, "S$");
+    }
+    return `${prefix}S$${number}`;
+  });
+}
+
+function normalizeLetterOfOfferWording(fields: Record<string, string>) {
+  const rentalStructure = formatLetterOfOfferRentalStructure(fields.rental_structure, fields.commencement_date, fields.expiry_date);
+  const optionToRenew = formatLetterOfOfferOptionToRenew(fields.option_to_renew);
+  const normalized = { ...fields };
+
+  if (rentalStructure || "rental_structure" in fields) {
+    normalized.rental_structure = rentalStructure;
+  }
+  if (optionToRenew || "option_to_renew" in fields) {
+    normalized.option_to_renew = optionToRenew;
+  }
+
+  return normalized;
+}
+
+function formatLetterOfOfferRentalStructure(value = "", commencementDate = "", expiryDate = "") {
+  const text = String(value || "").trim();
+  if (!text || /commencing from the expiry of the fitting out period/i.test(text)) {
+    return text;
+  }
+
+  const term = formatYearTerm(text);
+  const commencement = commencementDate || dateAfterKeyword(text, /\b(?:i\.e\.|from|commencing)\s+(\d{1,2}\s+[a-z]+\s+\d{4})/i);
+  const expiry = expiryDate || dateAfterKeyword(text, /\b(?:to|until|expiry|expiring on)\s+(\d{1,2}\s+[a-z]+\s+\d{4})/i);
+
+  if (!term || !commencement || !expiry) {
+    return text;
+  }
+
+  return `${term}, commencing from the expiry of the Fitting Out Period, i.e. ${commencement} ("Commencement Date") to ${expiry}.`;
+}
+
+function formatLetterOfOfferOptionToRenew(value = "") {
+  const text = String(value || "").trim();
+  if (!text || /^none$/i.test(text) || /prevailing market rental/i.test(text)) {
+    return text;
+  }
+
+  const term = formatYearTerm(text);
+  if (!term) {
+    return text;
+  }
+
+  return `${term}, at the prevailing market rental and at such terms and conditions as shall be determined by the Landlord.`;
+}
+
+function formatYearTerm(value: string) {
+  const match = String(value || "").match(/\b(\d+)\s*(?:\(\s*\d+\s*\))?\s*years?\b/i);
+  if (!match) {
+    return "";
+  }
+
+  const years = Number(match[1]);
+  return `${numberWord(years)} (${years}) ${years === 1 ? "year" : "years"}`;
+}
+
+function numberWord(value: number) {
+  const words: Record<number, string> = {
+    1: "One",
+    2: "Two",
+    3: "Three",
+    4: "Four",
+    5: "Five",
+    6: "Six",
+    7: "Seven",
+    8: "Eight",
+    9: "Nine",
+    10: "Ten",
+  };
+  return words[value] || String(value);
+}
+
+function dateAfterKeyword(value: string, pattern: RegExp) {
+  return String(value || "").match(pattern)?.[1]?.trim() || "";
 }
 
 function missingRequiredFields(documentType: DocumentType, data: Record<string, unknown>) {

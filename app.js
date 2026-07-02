@@ -116,6 +116,19 @@ const documentNoneHelpfulFields = new Set([
   "rent_free",
   "fitting_out_period",
 ]);
+const documentCurrencyFields = new Set([
+  "security_deposit",
+  "advance_rental",
+  "fitting_out_deposit",
+  "stamp_fees",
+  "base_rent",
+  "service_charge",
+  "joint_promotion_fund",
+]);
+const documentFieldHelpers = {
+  rental_structure: "Use the full LOI wording, e.g. Three (3) years, commencing from the expiry of the Fitting Out Period, i.e. 15 August 2026 (\"Commencement Date\") to 14 August 2029.",
+  option_to_renew: "Use the full option wording, or enter \"None\" if this does not apply.",
+};
 const dailyQuotes = [
   { text: "Brevity is the soul of wit.", author: "William Shakespeare", source: "Hamlet" },
   { text: "Sweet are the uses of adversity.", author: "William Shakespeare", source: "As You Like It" },
@@ -951,11 +964,29 @@ function formatDocumentFieldValue(value) {
   return String(value);
 }
 
+function withSingaporeDollarPrefix(value) {
+  return String(value || "").replace(/(^|[^\w$])(?:S\$|\$)?\s*(\d[\d,.]*(?:\.\d+)?)/g, (match, prefix, number, offset, fullText) => {
+    const after = fullText.slice(offset + match.length, offset + match.length + 12);
+    if (/^\s*(?:months?|years?)\b/i.test(after)) {
+      return match;
+    }
+    if (/S\$\s*\d/i.test(match)) {
+      return match.replace(/S\$\s*/i, "S$");
+    }
+    return `${prefix}S$${number}`;
+  });
+}
+
+function normalizeDocumentFieldForKey(key, value) {
+  const formatted = formatDocumentFieldValue(value);
+  return documentCurrencyFields.has(key) ? withSingaporeDollarPrefix(formatted) : formatted;
+}
+
 function normalizeDocumentFieldData(fields = {}) {
   const normalized = {};
 
   Object.entries(fields || {}).forEach(([key, value]) => {
-    normalized[key] = formatDocumentFieldValue(value);
+    normalized[key] = normalizeDocumentFieldForKey(key, value);
   });
 
   return normalized;
@@ -4320,9 +4351,10 @@ function renderDocumentApprovedFields(documentType, data, disabled = false) {
     });
 
     label.append(labelText, field);
-    if (documentNoneHelpfulFields.has(key)) {
+    const helperText = documentFieldHelpers[key] || (documentNoneHelpfulFields.has(key) ? "Enter \"None\" if this does not apply." : "");
+    if (helperText) {
       const helper = document.createElement("small");
-      helper.textContent = "Enter \"None\" if this does not apply.";
+      helper.textContent = helperText;
       label.append(helper);
     }
     elements.documentApprovedFieldsForm.append(label);
@@ -4463,7 +4495,8 @@ async function analyzeDocumentRequest() {
 
 async function generateDocumentRequest() {
   const documentType = state.draftDocumentType || "letter_of_offer";
-  const missing = missingRequiredDocumentFields(documentType, state.documentReviewData);
+  const structuredData = normalizeDocumentFieldData(state.documentReviewData);
+  const missing = missingRequiredDocumentFields(documentType, structuredData);
 
   if (documentType !== "letter_of_offer") {
     setNoticeText(elements.documentStarterNotice, "Generation is currently enabled for Letter of Offer templates first.");
@@ -4487,7 +4520,7 @@ async function generateDocumentRequest() {
         documentType,
         sourceType: state.draftDocumentSourceType,
         originalRequestText: state.draftDocumentRequestText,
-        structuredData: state.documentReviewData,
+        structuredData,
         aiAnalysis: state.documentAnalysis,
       },
     });
