@@ -2384,6 +2384,26 @@ function errorText(error) {
   return String(error?.message || error || "").trim();
 }
 
+async function edgeFunctionError(error) {
+  const detail = await edgeFunctionErrorText(error);
+  return new Error(detail || errorText(error));
+}
+
+async function edgeFunctionErrorText(error) {
+  const response = error?.context;
+
+  if (!response || typeof response.clone !== "function") {
+    return errorText(error);
+  }
+
+  const body = await response.clone().json().catch(async () => {
+    const text = await response.clone().text().catch(() => "");
+    return text ? { error: text } : null;
+  });
+
+  return String(body?.error || body?.message || errorText(error)).trim();
+}
+
 function isNetworkError(error) {
   return /failed to fetch|network|offline|timeout|load failed|internet|connection/i.test(errorText(error));
 }
@@ -4476,7 +4496,7 @@ async function analyzeDocumentRequest() {
     });
 
     if (error) {
-      throw error;
+      throw await edgeFunctionError(error);
     }
 
     if (data?.error) {
