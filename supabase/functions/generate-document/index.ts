@@ -100,8 +100,13 @@ Deno.serve(async (request) => {
     const template = await activeTemplateForType(documentType);
     const templateBytes = await downloadStorageObject(documentTemplateBucket, String(template.storage_path || ""));
     const generatedBytes = await generateDocx(templateBytes, structuredData);
+    const requestId = crypto.randomUUID();
+    const filePath = generatedFilePath(documentType, structuredData, requestId, 1);
+
+    await uploadStorageObject(generatedDocumentBucket, filePath, generatedBytes, docxContentType);
 
     const requestRow = await createDocumentRequest({
+      requestId,
       documentType,
       staffUserId: staffUser.id,
       sourceType: String(body.sourceType || "ai_request"),
@@ -109,15 +114,18 @@ Deno.serve(async (request) => {
       structuredData,
       aiExtractedData: normalizeExtractedFieldKeys(body.aiAnalysis?.extractedFields || structuredData),
       riskFlags: Array.isArray(body.aiAnalysis?.riskFlags) ? body.aiAnalysis.riskFlags : [],
+      latestFilePath: filePath,
     });
 
-    const filePath = generatedFilePath(documentType, structuredData, requestRow.id, 1);
-    await uploadStorageObject(generatedDocumentBucket, filePath, generatedBytes, docxContentType);
-    await createDocumentVersion(requestRow.id, filePath, structuredData, staffUser.id);
-    const updatedRequest = await updateDocumentRequestGenerated(requestRow.id, filePath);
+    try {
+      await createDocumentVersion(requestRow.id, filePath, structuredData, staffUser.id);
+    } catch (error) {
+      await cancelGeneratedDocumentRequest(requestRow.id).catch(() => {});
+      throw error;
+    }
 
     return jsonResponse({
-      documentRequest: updatedRequest,
+      documentRequest: requestRow,
       filePath,
       versionNumber: 1,
     }, 200);
@@ -388,6 +396,7 @@ async function activeTemplateForType(documentType: DocumentType) {
 }
 
 async function createDocumentRequest(values: {
+  requestId: string;
   documentType: DocumentType;
   staffUserId: string;
   sourceType: string;
@@ -395,6 +404,7 @@ async function createDocumentRequest(values: {
   structuredData: Record<string, unknown>;
   aiExtractedData: Record<string, unknown>;
   riskFlags: unknown[];
+  latestFilePath: string;
 }) {
   const supabaseUrl = env("SUPABASE_URL");
   const response = await fetch(`${supabaseUrl}/rest/v1/document_requests?select=*`, {
@@ -405,8 +415,9 @@ async function createDocumentRequest(values: {
       Prefer: "return=representation",
     },
     body: JSON.stringify({
+      id: values.requestId,
       document_type: values.documentType,
-      status: "ready_to_generate",
+      status: "generated",
       requested_by: values.staffUserId,
       source_type: allowedSourceType(values.sourceType),
       original_request_text: values.originalRequestText,
@@ -415,7 +426,8 @@ async function createDocumentRequest(values: {
       approved_data: values.structuredData,
       missing_fields: [],
       risk_flags: values.riskFlags,
-      latest_version_number: 0,
+      latest_version_number: 1,
+      latest_file_path: values.latestFilePath,
     }),
   });
 
@@ -460,28 +472,25 @@ async function createDocumentVersion(
   }
 }
 
-async function updateDocumentRequestGenerated(requestId: string, filePath: string) {
+async function cancelGeneratedDocumentRequest(requestId: string) {
   const supabaseUrl = env("SUPABASE_URL");
-  const response = await fetch(`${supabaseUrl}/rest/v1/document_requests?id=eq.${requestId}&select=*`, {
+  const response = await fetch(`${supabaseUrl}/rest/v1/document_requests?id=eq.${requestId}`, {
     method: "PATCH",
     headers: {
       ...serviceHeaders(),
       "Content-Type": "application/json",
-      Prefer: "return=representation",
+      Prefer: "return=minimal",
     },
     body: JSON.stringify({
-      status: "generated",
-      latest_version_number: 1,
-      latest_file_path: filePath,
+      status: "cancelled",
+      latest_version_number: 0,
+      latest_file_path: null,
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`Could not update generated document request: ${await response.text()}`);
+    throw new Error(`Could not cancel incomplete document request: ${await response.text()}`);
   }
-
-  const rows = await response.json();
-  return rows[0];
 }
 
 async function downloadStorageObject(bucket: string, path: string) {
