@@ -4037,8 +4037,10 @@ function beginDocumentDraft() {
 }
 
 function setDocumentMode(mode) {
-  state.documentMode = mode === "requests" ? "requests" : "templates";
-  if (state.documentMode === "requests" && hasActiveDocumentTemplate()) {
+  const nextMode = mode === "requests" ? "requests" : "templates";
+  const isEnteringRequests = state.documentMode !== "requests" && nextMode === "requests";
+  state.documentMode = nextMode;
+  if (isEnteringRequests && hasActiveDocumentTemplate()) {
     beginDocumentDraft();
   }
   render();

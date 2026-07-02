@@ -2,3 +2,6 @@
 .vercel-cli-cache
 .vercel-cli-home
 .DS_Store
+oculus-visual-preview.html
+visual-design-preview.html
+supabase/.temp/
