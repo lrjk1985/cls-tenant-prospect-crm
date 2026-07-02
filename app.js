@@ -4023,8 +4023,24 @@ function hasActiveDocumentTemplate() {
   return state.documentTemplates.some((template) => template.isActive);
 }
 
+function beginDocumentDraft() {
+  state.selectedDocumentRequestId = null;
+  state.isCreatingDocument = true;
+  state.documentMode = "requests";
+  state.draftDocumentType = "letter_of_offer";
+  state.draftDocumentSourceType = "ai_request";
+  state.draftDocumentRequestText = "";
+  state.documentAnalysis = null;
+  state.documentReviewData = {};
+  elements.documentStarterForm.reset();
+  setNoticeText(elements.documentStarterNotice, defaultDocumentNotice);
+}
+
 function setDocumentMode(mode) {
   state.documentMode = mode === "requests" ? "requests" : "templates";
+  if (state.documentMode === "requests" && hasActiveDocumentTemplate()) {
+    beginDocumentDraft();
+  }
   render();
 }
 
@@ -4405,16 +4421,7 @@ function createDocumentRequestShell() {
     return;
   }
 
-  state.selectedDocumentRequestId = null;
-  state.isCreatingDocument = true;
-  state.documentMode = "requests";
-  state.draftDocumentType = "letter_of_offer";
-  state.draftDocumentSourceType = "ai_request";
-  state.draftDocumentRequestText = "";
-  state.documentAnalysis = null;
-  state.documentReviewData = {};
-  elements.documentStarterForm.reset();
-  setNoticeText(elements.documentStarterNotice, defaultDocumentNotice);
+  beginDocumentDraft();
   render();
 }
 
