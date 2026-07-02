@@ -979,6 +979,8 @@ label span {
 
 .document-source-option:disabled {
   cursor: default;
+  opacity: 0.58;
+  box-shadow: none;
 }
 
 .document-ai-input,

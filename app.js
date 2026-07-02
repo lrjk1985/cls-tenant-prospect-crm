@@ -3,6 +3,7 @@ const supabasePublishableKey = "sb_publishable_hPwolXbHtAbRMoimb_PMuw_PSiYKZGC";
 const storageBucket = "crm-files";
 const documentTemplateBucket = "document-templates";
 const generatedDocumentBucket = "generated-documents";
+const aiDocumentRequestsEnabled = false;
 const maxAttachmentSize = 10 * 1024 * 1024;
 const maxTemplateSize = 10 * 1024 * 1024;
 const defaultTradeCategories = ["F&B", "F&B Takeaway", "Retail", "Office"];
@@ -11,7 +12,7 @@ const tradeCategoryStorageKey = "tenantProspectCrmTradeCategories";
 const defaultInteractionNotice = "Timestamp added automatically. Attachments up to 10 MB.";
 const defaultUnitDocumentNotice = "Documents are saved securely in Supabase Storage. Keep files under 10 MB each.";
 const defaultAgentInteractionNotice = "Timestamp added automatically.";
-const defaultDocumentNotice = "Choose AI Request to extract fields from notes, or Structured Form to enter the required fields yourself.";
+const defaultDocumentNotice = "AI Request is temporarily unavailable while OpenAI quota is being fixed. Use Structured Form for now.";
 const defaultTemplateNotice = "Upload existing Word documents here, then add placeholders before generation is enabled.";
 const documentTypeLabels = {
   quotation: "Quotation",
@@ -214,7 +215,7 @@ const state = {
   documentLoadError: "",
   documentTemplateLoadError: "",
   draftDocumentType: "letter_of_offer",
-  draftDocumentSourceType: "ai_request",
+  draftDocumentSourceType: "structured_form",
   draftDocumentRequestText: "",
   documentAnalysis: null,
   documentReviewData: {},
@@ -4048,7 +4049,7 @@ function beginDocumentDraft() {
   state.isCreatingDocument = true;
   state.documentMode = "requests";
   state.draftDocumentType = "letter_of_offer";
-  state.draftDocumentSourceType = "ai_request";
+  state.draftDocumentSourceType = "structured_form";
   state.draftDocumentRequestText = "";
   state.documentAnalysis = null;
   state.documentReviewData = {};
@@ -4329,9 +4330,14 @@ function updateDocumentStepList(activeStep) {
 }
 
 function setDocumentSourceType(sourceType) {
-  const nextSourceType = sourceType === "structured_form" ? "structured_form" : "ai_request";
+  const nextSourceType = sourceType === "ai_request" && aiDocumentRequestsEnabled
+    ? "ai_request"
+    : "structured_form";
   state.draftDocumentSourceType = nextSourceType;
   elements.documentSourceTypeInput.value = nextSourceType;
+  if (sourceType === "ai_request" && !aiDocumentRequestsEnabled) {
+    setNoticeText(elements.documentStarterNotice, defaultDocumentNotice);
+  }
   renderDocumentDetail();
 }
 
@@ -4340,9 +4346,14 @@ function renderDocumentSourceControls(sourceType, disabled = false) {
 
   sourceButtons.forEach((button) => {
     const isActive = button.dataset.sourceType === sourceType;
+    const isAiButton = button.dataset.sourceType === "ai_request";
     button.classList.toggle("active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
-    button.disabled = disabled;
+    button.disabled = disabled || (isAiButton && !aiDocumentRequestsEnabled);
+    button.setAttribute("aria-disabled", String(button.disabled));
+    button.title = isAiButton && !aiDocumentRequestsEnabled
+      ? "AI Request is temporarily unavailable until OpenAI quota is fixed."
+      : "";
   });
 
   elements.documentAiInputBlock.classList.toggle("hidden", sourceType !== "ai_request");
@@ -4451,6 +4462,7 @@ function updateDocumentAnalyzeButtonState() {
   const hasText = Boolean(state.draftDocumentRequestText.trim());
   elements.analyzeDocumentButton.disabled = (
     state.isAnalyzingDocument
+    || !aiDocumentRequestsEnabled
     || !state.isCreatingDocument
     || state.draftDocumentSourceType !== "ai_request"
     || !hasText
@@ -4655,7 +4667,10 @@ function renderDocumentDetail() {
   const analysis = selected ? null : state.documentAnalysis;
   const type = selected?.type || analysis?.documentType || state.draftDocumentType || "letter_of_offer";
   const status = selected?.status || "draft";
-  const sourceType = selected?.sourceType || state.draftDocumentSourceType || "ai_request";
+  const rawSourceType = selected?.sourceType || state.draftDocumentSourceType || "structured_form";
+  const sourceType = !selected && rawSourceType === "ai_request" && !aiDocumentRequestsEnabled
+    ? "structured_form"
+    : rawSourceType;
   const requestText = selected?.originalRequestText || state.draftDocumentRequestText || "";
 
   elements.documentDetailEyebrow.textContent = selected ? "Document request" : "New document";

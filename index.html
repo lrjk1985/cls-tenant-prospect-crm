@@ -631,33 +631,33 @@
                     <div class="document-source-field">
                       <span>Start from</span>
                       <select class="sr-only" id="documentSourceTypeInput" name="sourceType" tabindex="-1" aria-hidden="true">
-                        <option value="ai_request">AI request</option>
-                        <option value="structured_form">Structured form</option>
+                        <option value="ai_request" disabled>AI request</option>
+                        <option value="structured_form" selected>Structured form</option>
                       </select>
                       <div class="document-source-options" role="group" aria-label="Start from">
-                        <button class="document-source-option active" id="documentAiSourceButton" type="button" data-source-type="ai_request">
+                        <button class="document-source-option" id="documentAiSourceButton" type="button" data-source-type="ai_request" disabled aria-disabled="true" title="AI Request is temporarily unavailable until OpenAI quota is fixed.">
                           <strong>AI Request</strong>
-                          <small>Describe the document in plain English. AI will extract the fields for your review.</small>
+                          <small>Temporarily unavailable while OpenAI quota is being fixed.</small>
                         </button>
-                        <button class="document-source-option" id="documentStructuredSourceButton" type="button" data-source-type="structured_form">
+                        <button class="document-source-option active" id="documentStructuredSourceButton" type="button" data-source-type="structured_form">
                           <strong>Structured Form</strong>
                           <small>Fill the required template fields yourself before generating the Word document.</small>
                         </button>
                       </div>
                     </div>
-                    <div class="document-ai-input" id="documentAiInputBlock">
+                    <div class="document-ai-input hidden" id="documentAiInputBlock">
                       <label>
                         <span>AI request</span>
                         <textarea id="documentRequestTextInput" rows="6" placeholder="Example: Prepare a Letter of Offer for ABC Pte Ltd for Unit #02-15..."></textarea>
                       </label>
                     </div>
-                    <div class="document-structured-intro hidden" id="documentStructuredIntro">
+                    <div class="document-structured-intro" id="documentStructuredIntro">
                       <strong>Structured form selected</strong>
                       <p>Complete the required fields below. Use "None" for fields that are intentionally not applicable.</p>
                     </div>
                     <div class="form-actions">
-                      <p class="timestamp-hint" id="documentStarterNotice">Choose AI Request to extract fields from notes, or Structured Form to enter the required fields yourself.</p>
-                      <button class="secondary-button" id="analyzeDocumentButton" type="button">Analyze Request</button>
+                      <p class="timestamp-hint" id="documentStarterNotice">AI Request is temporarily unavailable while OpenAI quota is being fixed. Use Structured Form for now.</p>
+                      <button class="secondary-button hidden" id="analyzeDocumentButton" type="button">Analyze Request</button>
                       <button class="primary-button" id="generateDocumentButton" type="button" disabled>Generate Document</button>
                     </div>
                   </form>
