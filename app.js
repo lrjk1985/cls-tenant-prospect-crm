@@ -666,6 +666,11 @@ async function loadDocumentRequests() {
   }
 
   state.documentRequests = (data || []).map(mapDocumentRequestFromDb);
+  if (state.isCreatingDocument) {
+    state.selectedDocumentRequestId = null;
+    return;
+  }
+
   state.selectedDocumentRequestId = state.documentRequests.some((request) => request.id === state.selectedDocumentRequestId)
     ? state.selectedDocumentRequestId
     : state.documentRequests[0]?.id || null;
