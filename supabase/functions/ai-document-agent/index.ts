@@ -634,7 +634,7 @@ async function analyzeWithAi(
     return fallbackOutput;
   }
 
-  const model = env("OPENAI_MODEL") || "gpt-4.1-mini";
+  const model = env("OPENAI_MODEL") || "gpt-4o-mini";
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -683,17 +683,14 @@ async function analyzeWithAi(
   });
 
   if (!response.ok) {
-    return {
-      ...fallbackOutput,
-      aiUnavailableMessage: "AI provider call failed, so this used the controlled rule-based checker.",
-    };
+    throw new Error(`AI provider call failed (${response.status}): ${await safeProviderError(response)}`);
   }
 
   const payload = await response.json();
   const text = String(payload.choices?.[0]?.message?.content || "").trim();
 
   if (!text) {
-    return fallbackOutput;
+    throw new Error("AI provider returned an empty analysis.");
   }
 
   try {
@@ -715,9 +712,14 @@ async function analyzeWithAi(
       aiProvider: model,
       cleanedSpecialConditions: cleanSpecialConditions(extractedFields.special_conditions),
     };
-  } catch {
-    return fallbackOutput;
+  } catch (error) {
+    throw new Error(`AI provider returned invalid analysis JSON: ${errorMessage(error)}`);
   }
+}
+
+async function safeProviderError(response: Response) {
+  const text = await response.text().catch(() => "");
+  return text.replace(/sk-[a-zA-Z0-9_-]+/g, "[redacted]").slice(0, 500) || response.statusText || "Unknown provider error.";
 }
 
 function analysisJsonSchema() {
